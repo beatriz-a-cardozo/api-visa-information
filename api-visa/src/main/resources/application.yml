@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: visa-api
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
