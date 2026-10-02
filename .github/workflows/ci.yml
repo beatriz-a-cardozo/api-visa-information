@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev, hom ]
+  pull_request:
+    branches: [ main, dev, hom ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build e testes
+        run: mvn -B verify
