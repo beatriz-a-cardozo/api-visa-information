@@ -1,3 +1,4 @@
+
 package com.tcc.api_visa.scraper.impl;
 
 import com.tcc.api_visa.model.Requirement;
@@ -6,6 +7,7 @@ import com.tcc.api_visa.model.Visa;
 import com.tcc.api_visa.model.VisaType;
 import com.tcc.api_visa.scraper.ScraperStrategy;
 import java.io.IOException;
+import java.util.Locale;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,6 +36,11 @@ public class CanadaScraper implements ScraperStrategy {
                 .timeout(20000)
                 .followRedirects(true)
                 .get();
+
+        return extractFromDocument(document);
+    }
+
+    public Visa extractFromDocument(Document document) {
 
         Visa visa = new Visa();
 
@@ -90,7 +97,7 @@ public class CanadaScraper implements ScraperStrategy {
 
     private RequirementType classifyRequirement(String text) {
 
-        String lowerText = text.toLowerCase();
+        String lowerText = text.toLowerCase(Locale.ROOT);
 
         if (lowerText.contains("passport")
                 || lowerText.contains("travel document")) {
