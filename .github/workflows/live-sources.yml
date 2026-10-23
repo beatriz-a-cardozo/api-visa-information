@@ -1,0 +1,61 @@
+# Runs the scrapers against the real government websites. The regular CI uses saved HTML, so
+# this is what tells us a site changed its structure. On failure it opens (or updates) an issue.
+name: Live sources check
+
+on:
+  schedule:
+    - cron: '0 9 * * 1,4' # Mondays and Thursdays, 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-sources
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: api-visa
+
+jobs:
+  live:
+    name: Scrapers against official websites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: api-visa/pom.xml
+
+      - name: Run live tests
+        run: ./mvnw -B -ntp test -Dgroups=live -DexcludedGroups= -Djacoco.skip=true -Dspotless.check.skip=true
+
+      - name: Open or update an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Scraper falhou contra o site oficial"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          body="A verificação agendada falhou: $RUN_URL. Algum site pode ter mudado de estrutura ou estar fora do ar."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi

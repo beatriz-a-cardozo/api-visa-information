@@ -1,4 +1,4 @@
-package com.tcc.api_visa.model;
+package com.tcc.api_visa.domain;
 
 public enum Continent {
     AFRICA,

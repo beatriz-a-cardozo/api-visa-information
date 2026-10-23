@@ -1,4 +1,4 @@
-package com.tcc.api_visa.model;
+package com.tcc.api_visa.domain;
 
 public enum RequirementType {
     DOCUMENT,
@@ -7,5 +7,9 @@ public enum RequirementType {
     INVITATION_LETTER,
     PHOTO,
     FEE_PAYMENT,
+    TRAVEL_INSURANCE,
+    ACCOMMODATION,
+    RETURN_TICKET,
+    CRIMINAL_RECORD,
     OTHER
 }
