@@ -1,0 +1,42 @@
+# Version updates go to dev, following the sprint flow. Security updates are opened by GitHub
+# against the default branch regardless of this file.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /api-visa
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+      test:
+        patterns: ["org.testcontainers*", "org.junit*", "org.assertj*", "org.mockito*"]
+      build-plugins:
+        patterns: ["*plugin*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /api-visa
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: docker-compose
+    directory: /api-visa
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday

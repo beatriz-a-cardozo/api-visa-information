@@ -1,19 +1,43 @@
+# Local environment. Copy .env.example to .env and set the passwords before running:
+#   docker compose up --build
 services:
   api:
     build: .
+    image: ${API_IMAGE:-api-visa:local}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${API_PORT:-8080}:8080"
     environment:
-      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?set in .env}:${MONGO_ROOT_PASSWORD:?set in .env}@mongo:27017/api_visa?authSource=admin
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
 
   mongo:
-    image: mongo:7
+    image: mongo:8.0@sha256:4a4ab5d4834207389e0d7270fac988e21ffedccecba77991a552f755df229907
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+    # Only reachable from this machine, never from the network.
     ports:
-      - "27017:27017"
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
 
 volumes:
   mongo_data:

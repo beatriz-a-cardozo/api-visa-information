@@ -1,71 +1,174 @@
-name: CI - Build, Tests and Health Check
+name: CI
 
 on:
   push:
+    branches: [dev, hom, main]
   pull_request:
+    branches: [dev, hom, main]
+  workflow_dispatch:
+
+# Every job starts read-only and asks for more only where it needs it.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: api-visa
 
 jobs:
-  build-test-health:
-    name: Build, Tests and Health Check
+  build:
+    name: Build, tests and coverage
     runs-on: ubuntu-latest
-
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-
-    defaults:
-      run:
-        working-directory: ./api-visa
-
-    env:
-      MONGODB_URI: mongodb://localhost:27017/visa_db
-
+    timeout-minutes: 20
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
           cache-dependency-path: api-visa/pom.xml
 
-      - name: Make Maven Wrapper executable
-        run: chmod +x mvnw
+      # Formatting (Spotless), unit and integration tests (Testcontainers) and the coverage gate (JaCoCo).
+      - name: Verify
+        run: ./mvnw -B -ntp verify
 
-      - name: Build and run tests
-        run: ./mvnw --batch-mode clean verify
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: api-visa/target/site/jacoco/
+          if-no-files-found: ignore
 
-      - name: Start application
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: api-visa/target/surefire-reports/
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: api-visa/target/classes/META-INF/sbom/application.cdx.json
+
+  image:
+    name: Docker image, vulnerability scan and smoke test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -t api-visa:ci .
+
+      - name: Scan image (Grype)
+        id: scan
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: api-visa:ci
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: sarif
+
+      - name: Upload scan results to the Security tab
+        if: always() && steps.scan.outputs.sarif != '' && github.event.pull_request.head.repo.fork != true
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+          category: container-image
+
+      # Same docker-compose.yml used locally, running the image that was just scanned.
+      - name: Start the stack
         run: |
-          ./mvnw --batch-mode spring-boot:run > application.log 2>&1 &
-          echo $! > application.pid
+          {
+            echo "MONGO_ROOT_USERNAME=ci"
+            echo "MONGO_ROOT_PASSWORD=$(openssl rand -hex 24)"
+            echo "API_IMAGE=api-visa:ci"
+          } > .env
+          docker compose up -d --no-build
 
-      - name: Verify health checker
+      - name: Wait for health
         run: |
-          for i in $(seq 1 30); do
-            RESPONSE=$(curl -fsS http://localhost:8080/actuator/health || true)
-
-            if echo "$RESPONSE" | grep -q '"status":"UP"'; then
-              echo "Health check passed!"
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'; then
+              echo "Application is UP"
               exit 0
             fi
-
-            echo "Waiting for application..."
-            sleep 5
+            sleep 3
           done
-
-          echo "Health check failed!"
-          cat application.log
+          echo "Application did not become healthy"
           exit 1
 
-      - name: Show application logs on failure
-        if: failure()
+      - name: Check that only health is exposed
         run: |
-          if [ -f application.log ]; then
-            cat application.log
-          fi
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/actuator/env)" = "404"
+          ! curl -fsS http://127.0.0.1:8080/actuator/health | grep -q 'components'
+
+      - name: Logs
+        if: failure() && hashFiles('api-visa/.env') != ''
+        run: docker compose logs
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only
+
+  secrets:
+    name: Secret scan (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

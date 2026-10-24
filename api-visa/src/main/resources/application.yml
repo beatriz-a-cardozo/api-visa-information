@@ -1,9 +1,22 @@
 spring:
   application:
-    name: visa-api
+    name: api-visa
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/api_visa}
   data:
     mongodb:
-      uri: ${MONGODB_URI}
+      auto-index-creation: true
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  shutdown: graceful
+  # Render and other hosts terminate TLS in a proxy; trust its X-Forwarded-* headers.
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
 
 management:
   endpoints:
@@ -12,4 +25,15 @@ management:
         include: health
   endpoint:
     health:
-      show-details: always
+      # Database details are not public.
+      show-details: never
+      probes:
+        enabled: true
+
+api-visa:
+  scraper:
+    user-agent: "api-visa-tcc/0.1 (+https://github.com/beatriz-a-cardozo/api-visa-information)"
+    timeout: 20s
+    min-delay-per-host: 2s
+    max-body-bytes: 5242880
+    respect-robots-txt: true
