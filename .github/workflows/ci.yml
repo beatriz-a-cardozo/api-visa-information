@@ -130,7 +130,7 @@ jobs:
           ! curl -fsS http://127.0.0.1:8080/actuator/health | grep -q 'components'
 
       - name: Logs
-        if: failure()
+        if: failure() && hashFiles('api-visa/.env') != ''
         run: docker compose logs
 
   dependency-review:
