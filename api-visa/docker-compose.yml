@@ -8,6 +8,14 @@ services:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     environment:
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?set in .env}:${MONGO_ROOT_PASSWORD:?set in .env}@mongo:27017/api_visa?authSource=admin
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      COLLECTION_CRON: ${COLLECTION_CRON:--}
+      NOTIFICATION_EMAIL_TO: ${NOTIFICATION_EMAIL_TO:-}
+      NOTIFICATION_EMAIL_FROM: ${NOTIFICATION_EMAIL_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     depends_on:
       mongo:
         condition: service_healthy
