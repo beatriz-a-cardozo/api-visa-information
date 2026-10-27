@@ -19,23 +19,25 @@ Cada item vira um card no board e, em geral, um PR para `dev`.
 
 ## Sprint 3 — Coleta e histórico
 
-- [ ] `CollectionService`: roda os scrapers, compara hash, grava histórico e log
-- [ ] Endpoint admin `POST /admin/collections` (protegido) e agendamento
-- [ ] Alerta de falha por e-mail (Spring Mail + Brevo)
-- [ ] Workflow agendado que chama a coleta no ambiente de produção
+- [x] `CollectionService`: roda os scrapers, compara hash, grava histórico e log
+- [x] Endpoints admin: `POST /admin/collections`, `GET /admin/collections/{runId}`,
+      `GET /admin/collections/logs`, protegidos por `X-Admin-Key`
+- [x] Spring Security (API sem sessão; `/admin` com chave; fora dele só `GET`)
+- [x] Alerta de falha por e-mail (Spring Mail, qualquer SMTP; Brevo em produção)
+- [x] Workflow agendado `collect.yml` que chama a coleta no ambiente de produção
+- [x] Erros em Problem Details (RFC 9457)
 
 ## Sprint 4 — API pública
 
-- [ ] `GET /api/v1/visas?origin=BRA&destination=DEU`
-- [ ] `GET /api/v1/visas/history?origin=…&destination=…` (até 1 ano)
-- [ ] `GET /api/v1/countries`
-- [ ] Custo convertido para a moeda de origem (Frankfurter, cache diário)
-- [ ] Erros padronizados (RFC 9457 Problem Details), OpenAPI/Swagger
-- [ ] Limite de requisições por IP (Bucket4j)
+- [x] `GET /api/v1/visas?origin=BRA&destination=DEU`
+- [x] `GET /api/v1/visas/history?origin=…&destination=…` (até 1 ano)
+- [x] `GET /api/v1/countries`
+- [x] Custo convertido para a moeda de origem (Frankfurter, cache de 12 h)
+- [x] Erros padronizados (RFC 9457 Problem Details), OpenAPI/Swagger
+- [x] Limite de requisições por IP (Bucket4j)
 
 ## Sprint 5 — Admin e segurança
 
-- [ ] Spring Security para `/admin/**`
 - [ ] CRUD de fontes oficiais e correção manual de requisitos (`dataOrigin = MANUAL`)
 - [ ] Validação de URL cadastrada (https, sem IP privado) contra SSRF
 - [ ] Cabeçalhos de segurança, CORS fechado

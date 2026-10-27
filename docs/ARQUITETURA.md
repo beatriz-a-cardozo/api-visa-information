@@ -34,7 +34,8 @@ api (controllers, DTOs)  ->  service  ->  repository  ->  MongoDB
 ```
 
 Pacotes em `com.tcc.api_visa`: `domain`, `repository`, `service`, `scraper`,
-`config` e, a partir da sprint da API, `api`.
+`exchange`, `notification`, `security`, `config` e `api` (`api.v1` para a consulta
+pública, `api.admin` para a administração).
 
 ## Modelo de dados
 
@@ -62,6 +63,13 @@ da origem acontece na leitura, usando a API pública do Banco Central Europeu vi
 [Frankfurter](https://frankfurter.dev) (gratuita, sem chave), com cache diário.
 A resposta informa a taxa e a data da cotação, para não parecer um valor oficial.
 
+Na implementação (sprint 4), o cache guarda cada par de moedas por 12 h em vez de um dia
+inteiro: o BCE publica uma vez por dia útil, e 12 h evita carregar a cotação da véspera
+por quase dois dias. Uma moeda que o BCE não publica fica marcada pelo mesmo tempo; uma
+falha de rede não fica no cache e é tentada de novo na próxima consulta. Em qualquer
+falha a consulta responde normalmente, só sem o valor convertido (`costInOriginCurrency`
+nulo). O histórico mostra os valores como foram publicados, sem conversão.
+
 O BCE cobre as moedas de todas as origens (BRL, JPY, EUR, CAD, ZAR), mas não EGP nem ARS.
 Isso só importa se Egito ou Argentina publicarem taxas na moeda local; nesse caso a
 resposta traz apenas o valor original, sem conversão.
@@ -80,6 +88,24 @@ resposta traz apenas o valor original, sem conversão.
   nunca o site real. Um workflow agendado separado roda contra os sites reais e
   avisa quando um deles muda de estrutura.
 
+### Execução da coleta
+
+- `POST /admin/collections` inicia a coleta em segundo plano e responde `202` com o
+  `runId`. Só uma coleta roda por vez (`409` se já houver outra). `?destination=GBR`
+  coleta um destino só.
+- Para cada scraper, o `CollectionService` grava um `CollectionLog` com status
+  `SUCCESS`, `PARTIAL` (alguns pares falharam) ou `FAILED`. Um destino com falha não
+  impede os outros.
+- O `VisaRequirementWriter` compara o SHA-256 do conteúdo novo com o salvo:
+  - igual: atualiza só `collectedAt`;
+  - diferente: copia o conteúdo anterior para `visa_history` e grava o novo;
+  - par corrigido manualmente por um admin (`dataOrigin = MANUAL`): não é sobrescrito,
+    e o log conta como `pairsSkipped`.
+- Se houver alguma falha, é enviado **um** alerta por execução (e-mail via SMTP, ou só log
+  quando o e-mail não está configurado). Os dados anteriores continuam disponíveis.
+- Agendamento em produção: workflow `collect.yml` (todo dia às 05:00 UTC). Para quem roda
+  o app sempre ligado, existe também `COLLECTION_CRON` (desligado por padrão).
+
 ### Sites que bloqueiam robôs
 
 Na verificação inicial (out/2026), alguns sites oficiais responderam `403` a um
@@ -89,11 +115,39 @@ coerente com a delimitação legal do TCC. Para esses casos as alternativas são
 outra fonte oficial do mesmo governo, um documento oficial publicado (PDF) ou
 entrada manual por um admin, sempre com `dataOrigin = MANUAL` e a URL de referência.
 
+## API pública
+
+| Rota | Resposta |
+|------|----------|
+| `GET /api/v1/countries` | Países cobertos, com moeda, papel (origem/destino) e fontes oficiais |
+| `GET /api/v1/visas?origin=&destination=` | Política, vistos, custo nas duas moedas, URLs de origem, `dataOrigin`, `collectedAt` e `updatedAt` |
+| `GET /api/v1/visas/history?origin=&destination=` | Mudanças do último ano, da mais recente para a mais antiga |
+
+- Códigos em ISO alfa-3 maiúsculo (`BRA`); outro formato responde `400`.
+- País fora do catálogo, ou fora do papel pedido (por exemplo `GBR` como origem), responde
+  `404 Unknown country`. Par válido ainda não coletado responde `404 No visa data`.
+  Origem igual ao destino responde `400`.
+- O histórico também filtra pela data, além do TTL: o monitor de TTL do MongoDB roda a
+  cada minuto, então um registro vencido poderia aparecer por alguns segundos.
+- Documentação OpenAPI em `/v3/api-docs` e Swagger UI em `/swagger-ui.html`, só com as
+  rotas `/api/**` e `/admin/**` (as do admin aparecem com o esquema `X-Admin-Key`).
+
 ## Segurança
 
-- Consulta pública com limite de requisições por IP.
-- Endpoints `/admin/**` protegidos (Spring Security, credencial vinda de variável
-  de ambiente, nunca do código).
+- Consulta pública (`/api/**`) com limite de requisições por IP (Bucket4j, token bucket):
+  60 por minuto por padrão (`RATE_LIMIT_CAPACITY`), com `X-RateLimit-Limit` e
+  `X-RateLimit-Remaining` em toda resposta e `429` com `Retry-After` acima do limite.
+  Os contadores ficam em memória, com no máximo 100 mil IPs e descarte dos ociosos,
+  para que muitos endereços não esgotem a memória. O IP vem de `X-Forwarded-For`,
+  porque a aplicação confia no proxy do provedor (`forward-headers-strategy`); fora de
+  um proxy que reescreva esse cabeçalho, o cliente poderia trocar de IP a cada
+  requisição. Com mais de uma instância, cada uma teria o seu limite (aceitável no
+  plano gratuito, que roda uma só).
+- Endpoints `/admin/**` protegidos por Spring Security: cabeçalho `X-Admin-Key` com a
+  chave de `ADMIN_API_KEY` (mínimo de 32 caracteres), comparada por hash em tempo
+  constante. Sem chave configurada, o `/admin` fica fechado. API sem sessão nem cookies;
+  fora do `/admin`, só `GET` é aceito.
+- Erros respondidos em Problem Details (RFC 9457), sem stack trace.
 - Actuator expõe só `health`, sem detalhes para usuários anônimos.
 - Container sem shell e sem root (distroless `nonroot`), imagens fixadas por digest.
 - Segredos só em variáveis de ambiente ou GitHub Secrets; `.env` fica fora do git.

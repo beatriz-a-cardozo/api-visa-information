@@ -2,6 +2,8 @@ package com.tcc.api_visa.api.admin;
 
 import com.tcc.api_visa.repository.CollectionLogRepository;
 import com.tcc.api_visa.service.CollectionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Triggers and audits collections. Every route here requires the {@code X-Admin-Key} header. */
+@Tag(name = "Admin: collections")
+@SecurityRequirement(name = "adminKey")
 @RestController
 @RequestMapping("/admin/collections")
 @RequiredArgsConstructor
