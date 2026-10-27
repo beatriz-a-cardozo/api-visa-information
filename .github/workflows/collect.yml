@@ -1,0 +1,67 @@
+# Triggers the visa collection on the deployed API. The free host sleeps when idle, so the
+# schedule lives here instead of inside the app. Needs, in Settings > Secrets and variables > Actions:
+#   variable API_BASE_URL  (e.g. https://api-visa.onrender.com)
+#   secret   ADMIN_API_KEY
+name: Collect
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # every day, 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      destination:
+        description: 'ISO alpha-3 of a single destination (empty = all)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: Trigger collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+      DESTINATION: ${{ inputs.destination }}
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$ADMIN_API_KEY" ]; then
+            echo "API_BASE_URL or ADMIN_API_KEY not configured yet; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The first request may wait ~1 min while the free instance wakes up.
+      - name: Wake up the API
+        if: steps.config.outputs.ready == 'true'
+        run: curl -fsS --retry 6 --retry-delay 20 --retry-all-errors --max-time 90 "$API_BASE_URL/actuator/health"
+
+      - name: Start the collection
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          if [ -n "$DESTINATION" ] && ! [[ "$DESTINATION" =~ ^[A-Z]{3}$ ]]; then
+            echo "Invalid destination: use an ISO alpha-3 code such as GBR"
+            exit 1
+          fi
+          url="$API_BASE_URL/admin/collections${DESTINATION:+?destination=$DESTINATION}"
+          status=$(curl -sS -o response.json -w '%{http_code}' -X POST -H "X-Admin-Key: $ADMIN_API_KEY" --max-time 60 "$url")
+          cat response.json; echo
+          case "$status" in
+            202) echo "Collection started" ;;
+            409) echo "A collection is already running" ;;
+            *) echo "Unexpected status $status"; exit 1 ;;
+          esac

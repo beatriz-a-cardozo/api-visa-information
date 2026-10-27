@@ -66,3 +66,20 @@ api-visa:
   collection:
     # Spring cron (sec min hour day month weekday). "-" disables it; production uses GitHub Actions.
     cron: ${COLLECTION_CRON:-}
+  exchange:
+    # European Central Bank rates via Frankfurter (free, no key).
+    base-url: https://api.frankfurter.dev/v1
+    timeout: 5s
+    cache-ttl: 12h
+  rate-limit:
+    # Requests per client IP to /api/**; over it the client gets 429 with Retry-After.
+    capacity: ${RATE_LIMIT_CAPACITY:60}
+    period: 1m
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  # Only the API itself, not Actuator or error endpoints.
+  paths-to-match: /api/**, /admin/**
