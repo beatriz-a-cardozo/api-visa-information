@@ -16,6 +16,10 @@ public class CollectionLog {
     @Id
     private String id;
 
+    /** Groups the logs of every scraper started by the same collection run. */
+    @Indexed
+    private String runId;
+
     @Indexed
     private String destinationIso3;
 
@@ -28,5 +32,9 @@ public class CollectionLog {
     private CollectionStatus status;
     private int pairsCollected;
     private int pairsChanged;
+
+    /** Pairs left untouched because an administrator corrected them manually. */
+    private int pairsSkipped;
+
     private String errorMessage;
 }
