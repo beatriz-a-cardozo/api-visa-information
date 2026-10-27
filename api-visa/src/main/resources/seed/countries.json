@@ -26,7 +26,8 @@
     "languages": ["en", "fr"], "origin": true, "destination": true,
     "officialSources": [
       {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/entry-requirements-country.html", "description": "IRCC - entry requirements by country", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
-      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eligibility.html", "description": "IRCC - visitor visa eligibility", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eligibility.html", "description": "IRCC - visitor visa eligibility", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta.html", "description": "IRCC - electronic travel authorization (eTA)", "language": "en", "verifiedAt": "2026-10-27T00:00:00Z"}
     ]
   },
   {
@@ -41,7 +42,8 @@
     "languages": ["en"], "origin": false, "destination": true,
     "officialSources": [
       {"url": "https://www.gov.uk/guidance/immigration-rules/immigration-rules-appendix-visitor-visa-national-list", "description": "Immigration Rules - Appendix Visitor: visa national list", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
-      {"url": "https://www.gov.uk/standard-visitor/overview", "description": "GOV.UK - Standard Visitor", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+      {"url": "https://www.gov.uk/standard-visitor/overview", "description": "GOV.UK - Standard Visitor", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.gov.uk/eta/apply", "description": "GOV.UK - apply for an electronic travel authorisation (ETA)", "language": "en", "verifiedAt": "2026-10-27T00:00:00Z"}
     ]
   },
   {

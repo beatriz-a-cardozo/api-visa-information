@@ -78,6 +78,20 @@ resposta traz apenas o valor original, sem conversão.
 
 - Um `VisaScraper` por país de destino. Ele lê as páginas de "lista de
   nacionalidades" do governo e devolve um resultado por país de origem.
+- Os nomes de país das listas viram código ISO pelo `CountryNames`, que usa os nomes do JDK
+  no idioma da página (inglês, alemão) e uma lista de formas oficiais que o JDK não usa
+  ("Korea, Republic of", "Kongo (Demokratische Republik)", "Türkiye"). Um teste confere que
+  todos os países das listas salvas são reconhecidos, exceto Kosovo, que não tem código ISO.
+- Cada lista tem um tamanho mínimo: se o site mudar e a lista vier vazia ou curta, a coleta
+  falha em vez de concluir que quase ninguém precisa de visto. Isso importa principalmente no
+  Reino Unido, onde quem não está na lista precisa de ETA.
+- Páginas de detalhe (visto, eTA/ETA) só são baixadas quando alguma origem precisa delas.
+
+| Destino | Lista de nacionalidades | Resultado por origem |
+|---------|-------------------------|----------------------|
+| CAN | "What you need to enter Canada" (IRCC): listas de visto, de eTA e de quem pode trocar o visto por eTA ao voar | `VISA_REQUIRED` com o visto de visitante (e o eTA, quando a origem pode trocar) ou `ELECTRONIC_TRAVEL_AUTHORIZATION` com taxa de CAN$7 |
+| GBR | Immigration Rules, Appendix Visitor: visa national list | `VISA_REQUIRED` com o Standard Visitor (£135, 6 meses) para quem está na lista; os demais `ELECTRONIC_TRAVEL_AUTHORIZATION` (£20). Irlandeses ficam de fora (Common Travel Area) |
+| DEU | Staatenliste zur Visumpflicht (Auswärtiges Amt): tabela Ja/Nein com notas numeradas | `VISA_FREE` (90 dias em 180) ou `VISA_REQUIRED`; as notas citadas na linha viram requisitos, em alemão |
 - Todo acesso passa pelo `HtmlFetcher`, que:
   - só aceita `https`;
   - se identifica com um User-Agent honesto, com link para o repositório;
