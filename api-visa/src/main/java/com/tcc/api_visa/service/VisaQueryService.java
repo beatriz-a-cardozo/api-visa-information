@@ -53,7 +53,8 @@ public class VisaQueryService {
         return new VisaChanges(pair.origin(), pair.destination(), changes);
     }
 
-    private Pair pair(String originIso3, String destinationIso3) {
+    /** Both countries exist in their role and are different; otherwise the matching exception. */
+    Pair pair(String originIso3, String destinationIso3) {
         if (originIso3.equals(destinationIso3)) {
             throw new SameCountryException();
         }
@@ -69,7 +70,7 @@ public class VisaQueryService {
                 .orElseThrow(() -> new UnknownCountryException(role, iso3));
     }
 
-    private record Pair(Country origin, Country destination) {}
+    record Pair(Country origin, Country destination) {}
 
     public record CurrentVisa(Country origin, Country destination, VisaRequirement requirement) {}
 

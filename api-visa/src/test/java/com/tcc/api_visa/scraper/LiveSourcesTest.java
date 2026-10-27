@@ -8,6 +8,8 @@ import com.tcc.api_visa.scraper.fetch.HtmlFetcher;
 import com.tcc.api_visa.scraper.fetch.PoliteHtmlFetcher;
 import com.tcc.api_visa.scraper.fetch.RobotsTxtPolicy;
 import com.tcc.api_visa.scraper.support.RequirementClassifier;
+import com.tcc.api_visa.security.HostResolver;
+import com.tcc.api_visa.security.PublicUrlValidator;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -32,7 +34,10 @@ class LiveSourcesTest {
             true);
 
     static Stream<VisaScraper> scrapers() {
-        HtmlFetcher fetcher = new PoliteHtmlFetcher(PROPERTIES, new RobotsTxtPolicy(PROPERTIES, Clock.systemUTC()));
+        HtmlFetcher fetcher = new PoliteHtmlFetcher(
+                PROPERTIES,
+                new RobotsTxtPolicy(PROPERTIES, Clock.systemUTC()),
+                new PublicUrlValidator(HostResolver.system()));
         RequirementClassifier classifier = new RequirementClassifier();
         return Stream.of(new CanadaScraper(fetcher, classifier), new UnitedKingdomScraper(fetcher, classifier));
     }

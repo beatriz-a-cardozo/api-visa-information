@@ -1,10 +1,14 @@
 package com.tcc.api_visa.api;
 
+import com.tcc.api_visa.security.UnsafeUrlException;
 import com.tcc.api_visa.service.CollectionAlreadyRunningException;
+import com.tcc.api_visa.service.DuplicateSourceException;
 import com.tcc.api_visa.service.SameCountryException;
+import com.tcc.api_visa.service.SourceNotFoundException;
 import com.tcc.api_visa.service.UnknownCountryException;
 import com.tcc.api_visa.service.UnknownDestinationException;
 import com.tcc.api_visa.service.VisaDataNotFoundException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +45,27 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(SameCountryException.class)
     ProblemDetail sameCountry(SameCountryException e) {
         return problem(HttpStatus.BAD_REQUEST, "Invalid country pair", e.getMessage());
+    }
+
+    @ExceptionHandler(UnsafeUrlException.class)
+    ProblemDetail unsafeUrl(UnsafeUrlException e) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid URL", e.getMessage());
+    }
+
+    @ExceptionHandler(SourceNotFoundException.class)
+    ProblemDetail sourceNotFound(SourceNotFoundException e) {
+        return problem(HttpStatus.NOT_FOUND, "Unknown source", e.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateSourceException.class)
+    ProblemDetail duplicateSource(DuplicateSourceException e) {
+        return problem(HttpStatus.CONFLICT, "Duplicate source", e.getMessage());
+    }
+
+    /** A collection saved the same pair at the same moment; repeating the request is safe. */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ProblemDetail concurrentUpdate(OptimisticLockingFailureException e) {
+        return problem(HttpStatus.CONFLICT, "Concurrent update", "The data changed while saving; try again");
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {
