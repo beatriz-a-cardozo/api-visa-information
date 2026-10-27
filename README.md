@@ -66,7 +66,24 @@ curl -H "X-Admin-Key: $ADMIN_API_KEY" http://localhost:8080/admin/collections/<r
 
 # últimos logs
 curl -H "X-Admin-Key: $ADMIN_API_KEY" "http://localhost:8080/admin/collections/logs?limit=20"
+
+# fontes oficiais de um país (GET lista, POST adiciona, PUT/DELETE ?url= altera/remove)
+curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" \
+  -d '{"url":"https://www.gov.uk/check-uk-visa","description":"GOV.UK","language":"en","verified":true}' \
+  http://localhost:8080/admin/countries/GBR/sources
+
+# correção manual de um par (a coleta deixa de sobrescrever) e devolução ao scraper
+curl -X PUT -H "X-Admin-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" -d @visa.json \
+  "http://localhost:8080/admin/visas?origin=BRA&destination=GBR"
+curl -X DELETE -H "X-Admin-Key: $ADMIN_API_KEY" \
+  "http://localhost:8080/admin/visas/manual?origin=BRA&destination=GBR"
 ```
+
+URLs cadastradas (fontes e correções manuais) precisam ser `https` e apontar para um endereço
+público; o formato do corpo de cada rota está no Swagger UI.
+
+Para liberar a API pública a um site no navegador, defina `CORS_ALLOWED_ORIGINS`
+(por exemplo `https://app.example.org`). Vazio, nenhum site de outra origem lê as respostas.
 
 ## Testes
 

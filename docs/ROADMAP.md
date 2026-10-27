@@ -38,9 +38,10 @@ Cada item vira um card no board e, em geral, um PR para `dev`.
 
 ## Sprint 5 — Admin e segurança
 
-- [ ] CRUD de fontes oficiais e correção manual de requisitos (`dataOrigin = MANUAL`)
-- [ ] Validação de URL cadastrada (https, sem IP privado) contra SSRF
-- [ ] Cabeçalhos de segurança, CORS fechado
+- [x] CRUD de fontes oficiais e correção manual de requisitos (`dataOrigin = MANUAL`)
+- [x] Validação de URL cadastrada (https, sem IP privado) contra SSRF, também em cada
+      redirecionamento da coleta
+- [x] Cabeçalhos de segurança, CORS fechado
 
 ## Sprint 6+ — Scrapers por destino
 

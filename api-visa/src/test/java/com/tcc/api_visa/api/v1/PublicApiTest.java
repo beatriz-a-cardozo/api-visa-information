@@ -22,6 +22,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,10 +33,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /** Runs over real HTTP so validation, error handling, security and the rate limit are all exercised. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "api-visa.cors.allowed-origins=" + PublicApiTest.ALLOWED_ORIGIN)
 @Import(MongoTestcontainersConfiguration.class)
 class PublicApiTest {
 
+    static final String ALLOWED_ORIGIN = "https://app.example.org";
     private static final Instant COLLECTED_AT = Instant.parse("2026-10-20T05:00:00Z");
 
     @Autowired
@@ -178,13 +182,62 @@ class PublicApiTest {
         assertThat(get("/swagger-ui/index.html").statusCode()).isEqualTo(200);
     }
 
-    private HttpResponse<String> get(String path) throws IOException, InterruptedException {
+    @Test
+    void sendsSecurityHeadersOnEveryResponse() throws Exception {
+        for (String path :
+                List.of("/api/v1/countries", "/api/v1/visas?origin=BRA&destination=ZZZ", "/actuator/health")) {
+            HttpResponse<String> response = get(path);
+            assertThat(response.headers().firstValue("Content-Security-Policy"))
+                    .as(path)
+                    .hasValueSatisfying(csp -> assertThat(csp).startsWith("default-src 'none'"));
+            assertThat(response.headers().firstValue("X-Content-Type-Options")).hasValue("nosniff");
+            assertThat(response.headers().firstValue("X-Frame-Options")).hasValue("DENY");
+            assertThat(response.headers().firstValue("Referrer-Policy")).hasValue("no-referrer");
+            assertThat(response.headers().firstValue("Permissions-Policy")).isPresent();
+            assertThat(response.headers().firstValue("Cache-Control"))
+                    .hasValueSatisfying(value -> assertThat(value).contains("no-store"));
+        }
+        // Swagger UI needs its own scripts and styles, and nothing else.
+        assertThat(get("/swagger-ui/index.html").headers().firstValue("Content-Security-Policy"))
+                .hasValueSatisfying(csp -> assertThat(csp).startsWith("default-src 'self'"));
+    }
+
+    @Test
+    void corsIsOpenOnlyToConfiguredOriginsAndOnlyForReading() throws Exception {
+        HttpResponse<String> allowed = get("/api/v1/countries", "Origin", ALLOWED_ORIGIN);
+        assertThat(allowed.headers().firstValue("Access-Control-Allow-Origin")).hasValue(ALLOWED_ORIGIN);
+        assertThat(allowed.headers().firstValue("Access-Control-Allow-Credentials"))
+                .isEmpty();
+
+        HttpResponse<String> other = get("/api/v1/countries", "Origin", "https://evil.example.com");
+        assertThat(other.statusCode()).isEqualTo(403);
+        assertThat(other.headers().firstValue("Access-Control-Allow-Origin")).isEmpty();
+
+        HttpResponse<String> preflight = send(
+                "OPTIONS", "/api/v1/countries", "Origin", ALLOWED_ORIGIN, "Access-Control-Request-Method", "DELETE");
+        assertThat(preflight.headers().firstValue("Access-Control-Allow-Methods"))
+                .isEmpty();
+
+        assertThat(get("/admin/collections/logs", "Origin", ALLOWED_ORIGIN)
+                        .headers()
+                        .firstValue("Access-Control-Allow-Origin"))
+                .isEmpty();
+    }
+
+    private HttpResponse<String> get(String path, String... headers) throws IOException, InterruptedException {
+        return send("GET", path, headers);
+    }
+
+    private HttpResponse<String> send(String method, String path, String... headers)
+            throws IOException, InterruptedException {
         String port = environment.getRequiredProperty("local.server.port");
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .method(method, HttpRequest.BodyPublishers.noBody());
+        if (headers.length > 0) {
+            request.headers(headers);
+        }
         try (HttpClient client = HttpClient.newHttpClient()) {
-            return client.send(
-                    HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                            .build(),
-                    HttpResponse.BodyHandlers.ofString());
+            return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
         }
     }
 

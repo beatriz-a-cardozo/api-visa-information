@@ -75,6 +75,10 @@ api-visa:
     # Requests per client IP to /api/**; over it the client gets 429 with Retry-After.
     capacity: ${RATE_LIMIT_CAPACITY:60}
     period: 1m
+  cors:
+    # Websites allowed to call /api/** from a browser, comma-separated (https://app.example.org).
+    # Empty = none; servers and curl are not affected by CORS.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 
 springdoc:
   api-docs:

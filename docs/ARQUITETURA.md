@@ -115,6 +115,23 @@ coerente com a delimitação legal do TCC. Para esses casos as alternativas são
 outra fonte oficial do mesmo governo, um documento oficial publicado (PDF) ou
 entrada manual por um admin, sempre com `dataOrigin = MANUAL` e a URL de referência.
 
+## Administração dos dados (sprint 5)
+
+- **Fontes oficiais**: `GET/POST /admin/countries/{iso3}/sources`, e `PUT`/`DELETE` com
+  `?url=` (a URL identifica a fonte e não se repete no mesmo país). Cada alteração é um único
+  update atômico no documento do país (`$push`, `$set` posicional, `$pull`), então dois admins
+  editando ao mesmo tempo não perdem a alteração um do outro, e o seed nunca as sobrescreve.
+  `verified: true` grava `verifiedAt` com a hora atual.
+- **Correção manual**: `PUT /admin/visas?origin=&destination=` grava o conteúdo com
+  `dataOrigin = MANUAL`, e a coleta passa a pular o par (`pairsSkipped`). Uma mudança real vai
+  para o histórico com `changeOrigin = MANUAL`, como uma coletada. Toda correção exige ao menos
+  uma URL de origem, para manter a rastreabilidade. `collectedAt` continua indicando a última
+  leitura do site (nulo se o par nunca foi coletado).
+- `DELETE /admin/visas/manual?origin=&destination=` devolve o par ao scraper: o conteúdo fica
+  até a próxima coleta, que o substitui (e o move para o histórico, se for diferente).
+- Se uma coleta e uma correção gravarem o mesmo par no mesmo instante, o `@Version` do documento
+  faz uma delas falhar (`409 Concurrent update` para o admin), sem perder dados.
+
 ## API pública
 
 | Rota | Resposta |
@@ -147,6 +164,23 @@ entrada manual por um admin, sempre com `dataOrigin = MANUAL` e a URL de referê
   chave de `ADMIN_API_KEY` (mínimo de 32 caracteres), comparada por hash em tempo
   constante. Sem chave configurada, o `/admin` fica fechado. API sem sessão nem cookies;
   fora do `/admin`, só `GET` é aceito.
+- URLs cadastradas (fontes e correções manuais) passam pelo `PublicUrlValidator`, contra SSRF:
+  só `https` na porta padrão, sem usuário/senha na URL, host por nome de domínio (não IP, o que
+  também barra formas como `2130706433` ou `0x7f.0.0.1`) e **todos** os endereços do host
+  públicos (sem loopback, redes privadas, link-local como o metadata da nuvem `169.254.169.254`,
+  CGNAT, `fc00::/7`, multicast nem IPv4 embutido em NAT64).
+- O `PoliteHtmlFetcher` repete essa validação antes de cada requisição e segue os
+  redirecionamentos ele mesmo (no máximo 5), validando cada salto: um site oficial não consegue
+  redirecionar a coleta para a rede interna. Resta a janela entre a consulta de DNS da validação
+  e a da conexão (DNS rebinding); fechá-la exigiria fixar o IP na conexão, o que o Jsoup não
+  oferece. O risco é baixo porque as URLs vêm de admins e de sites governamentais.
+- Cabeçalhos em toda resposta: `Content-Security-Policy: default-src 'none'` (o Swagger UI tem
+  uma política própria, que só permite os próprios scripts e estilos), `X-Content-Type-Options:
+  nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`,
+  `Cache-Control: no-store` e HSTS quando a requisição chega por https.
+- CORS fechado por padrão: nenhum site de outra origem lê as respostas no navegador. Origens
+  listadas em `CORS_ALLOWED_ORIGINS` podem fazer só `GET` em `/api/**`, sem credenciais; o
+  `/admin` nunca é liberado. CORS não afeta clientes fora do navegador (curl, servidores).
 - Erros respondidos em Problem Details (RFC 9457), sem stack trace.
 - Actuator expõe só `health`, sem detalhes para usuários anônimos.
 - Container sem shell e sem root (distroless `nonroot`), imagens fixadas por digest.
