@@ -15,4 +15,7 @@ with scripts removed. Update a fixture when the live-sources workflow reports th
 | `zaf/exempt-countries.html` | https://www.dha.gov.za/index.php/immigration-services/exempt-countries | 2026-10-28 | Department of Home Affairs (South Africa); reduced to the article body |
 | `arg/regimen-de-visas.html` | https://www.migraciones.gob.ar/accesible/indexdnm.php?visas | 2026-10-28 | Dirección Nacional de Migraciones (Argentina); reduced to the visa table |
 | `egy/faq.html` | https://visa2egypt.gov.eg/eVisa/FAQ | 2026-10-28 | Ministry of Interior (Egypt); reduced to the FAQ section, session tokens removed |
+| `aus/eta-601.html` | https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/electronic-travel-authority-601 | 2026-10-28 | Department of Home Affairs (Australia); see the site's copyright notice for terms of use; reduced to the hidden field with the page content (JSON) |
+| `aus/evisitor-651.html` | https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/evisitor-651 | 2026-10-28 | same as above |
+| `aus/visitor-600-tourist-overseas.html` | https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600/tourist-stream-overseas | 2026-10-28 | same as above |
 | `deu/staatenliste-visumpflicht.html` | https://www.auswaertiges-amt.de/de/service/visa-und-aufenthalt/staatenliste-zur-visumpflicht-207820 | 2026-10-27 | Auswärtiges Amt; see the site's Impressum for terms of use |

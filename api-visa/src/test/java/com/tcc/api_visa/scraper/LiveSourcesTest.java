@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tcc.api_visa.domain.VisaPolicy;
 import com.tcc.api_visa.scraper.destination.ArgentinaScraper;
+import com.tcc.api_visa.scraper.destination.AustraliaScraper;
 import com.tcc.api_visa.scraper.destination.CanadaScraper;
 import com.tcc.api_visa.scraper.destination.EgyptScraper;
 import com.tcc.api_visa.scraper.destination.GermanyScraper;
@@ -50,7 +51,8 @@ class LiveSourcesTest {
                 new GermanyScraper(fetcher, classifier),
                 new SouthAfricaScraper(fetcher),
                 new ArgentinaScraper(fetcher, classifier),
-                new EgyptScraper(fetcher, classifier));
+                new EgyptScraper(fetcher, classifier),
+                new AustraliaScraper(fetcher, classifier));
     }
 
     /** Every origin in scope gets a known policy, so a site change cannot silently drop or misread one. */

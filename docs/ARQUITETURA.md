@@ -95,7 +95,10 @@ resposta traz apenas o valor original, sem conversão.
 | ZAF | Visa exemption list (Department of Home Affairs): dias de isenção por tipo de passaporte | `VISA_FREE` com os dias da coluna "Ordinary"; quem não está na lista, ou não tem dias para passaporte comum, `VISA_REQUIRED` |
 | ARG | Régimen de Visas (Dirección Nacional de Migraciones): tabela por nacionalidade, com a bandeira nomeada pelo código ISO | célula vazia em "Pasaporte Ordinario" = `VISA_FREE`; "REQUIERE VISA" = `VISA_REQUIRED`, com a AVE como alternativa quando habilitada |
 | EGY | FAQ do portal de e-Visa (Ministério do Interior): lista de nacionalidades, taxas e requisitos | `E_VISA` com entrada única (US$30) e múltipla (US$65); origens fora da lista ficam de fora, porque a página não diz se são isentas ou pedem visto no consulado |
+| AUS | Páginas do ETA (601), do eVisitor (651) e do Visitor (600, tourist stream) no Home Affairs. O conteúdo vem em JSON num campo oculto que o navegador renderiza; o scraper lê esse campo, sem executar JavaScript | `ELECTRONIC_TRAVEL_AUTHORIZATION` (AUD20 do app) para a lista do ETA, `E_VISA` (grátis) para a do eVisitor, as duas opções para quem está nas duas, e `VISA_REQUIRED` (Visitor 600) para os demais |
 | BRA | Quadro Geral de Regime de Vistos (Itamaraty) | sem scraper: o quadro só existe em PDF, e o `robots.txt` do gov.br proíbe PDFs em `/mre` (`Disallow: /mre/*.pdf$`). Os pares com destino Brasil entram pela correção manual (`dataOrigin = MANUAL`), com a URL do quadro como fonte |
+| JPN | Visa exemption arrangements (MOFA) | sem scraper: o site responde `403` a robôs, inclusive no `robots.txt`. Entrada manual |
+| KOR | Korea Visa Portal (Ministério da Justiça) | sem scraper: a lista de isenção só aparece depois de um formulário `POST` com sessão, e o site do MOFA coreano responde com um desafio de cookie anti-robô. Entrada manual |
 
 - Em listas onde "não constar" ou "célula vazia" significa um resultado (Reino Unido, África
   do Sul, Argentina), há também um mínimo de linhas com cada resultado: uma coluna lida no
@@ -142,7 +145,15 @@ entrada manual por um admin, sempre com `dataOrigin = MANUAL` e a URL de referê
 O mesmo vale para o `robots.txt`: o do gov.br não bloqueia o robô, mas proíbe PDFs em `/mre`,
 e o quadro de vistos do Brasil só é publicado em PDF. Por isso o Brasil, como destino, não
 tem scraper. Já um `robots.txt` que responde 4xx (África do Sul `403`, Argentina e Egito `404`)
-é tratado como "tudo permitido", conforme a RFC 9309.
+é tratado como "tudo permitido", conforme a RFC 9309. A diferença do Japão é que lá o `403`
+vem também na página de vistos, ou seja, o próprio conteúdo é negado ao robô.
+
+Também não são usados desafios anti-robô (cookies de verificação, como o do MOFA coreano) nem
+navegação por formulário com sessão (como no portal de vistos coreano): o `HtmlFetcher` só faz
+`GET` simples, sem guardar cookies, para que a coleta continue sendo leitura de página pública.
+
+Situação em out/2026: dos 10 destinos, 7 têm scraper (CAN, GBR, DEU, ZAF, ARG, EGY, AUS) e 3
+dependem de entrada manual (BRA, JPN, KOR).
 
 ## Administração dos dados (sprint 5)
 

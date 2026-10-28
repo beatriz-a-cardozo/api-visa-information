@@ -51,7 +51,9 @@ Um card por destino, cada um com fixture e teste:
 - [x] DEU
 - [x] ZAF, ARG, EGY
 - [x] BRA: sem scraper (quadro de vistos só em PDF, proibido pelo `robots.txt`); entrada manual
-- [ ] JPN, AUS, KOR
+- [x] AUS
+- [x] JPN e KOR: sem scraper (MOFA do Japão responde `403` a robôs; o portal coreano só mostra a
+      lista por formulário com sessão, e o MOFA coreano exige um cookie anti-robô); entrada manual
 
 ## Deploy
 
