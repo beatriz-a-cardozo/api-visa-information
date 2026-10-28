@@ -49,7 +49,9 @@ Um card por destino, cada um com fixture e teste:
 
 - [x] CAN e GBR lendo a lista de nacionalidades (todas as origens), não só a página de requisitos
 - [x] DEU
-- [ ] BRA, JPN, ZAF, AUS, KOR, EGY, ARG
+- [x] ZAF, ARG, EGY
+- [x] BRA: sem scraper (quadro de vistos só em PDF, proibido pelo `robots.txt`); entrada manual
+- [ ] JPN, AUS, KOR
 
 ## Deploy
 

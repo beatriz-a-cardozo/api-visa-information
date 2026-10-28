@@ -92,6 +92,16 @@ resposta traz apenas o valor original, sem conversão.
 | CAN | "What you need to enter Canada" (IRCC): listas de visto, de eTA e de quem pode trocar o visto por eTA ao voar | `VISA_REQUIRED` com o visto de visitante (e o eTA, quando a origem pode trocar) ou `ELECTRONIC_TRAVEL_AUTHORIZATION` com taxa de CAN$7 |
 | GBR | Immigration Rules, Appendix Visitor: visa national list | `VISA_REQUIRED` com o Standard Visitor (£135, 6 meses) para quem está na lista; os demais `ELECTRONIC_TRAVEL_AUTHORIZATION` (£20). Irlandeses ficam de fora (Common Travel Area) |
 | DEU | Staatenliste zur Visumpflicht (Auswärtiges Amt): tabela Ja/Nein com notas numeradas | `VISA_FREE` (90 dias em 180) ou `VISA_REQUIRED`; as notas citadas na linha viram requisitos, em alemão |
+| ZAF | Visa exemption list (Department of Home Affairs): dias de isenção por tipo de passaporte | `VISA_FREE` com os dias da coluna "Ordinary"; quem não está na lista, ou não tem dias para passaporte comum, `VISA_REQUIRED` |
+| ARG | Régimen de Visas (Dirección Nacional de Migraciones): tabela por nacionalidade, com a bandeira nomeada pelo código ISO | célula vazia em "Pasaporte Ordinario" = `VISA_FREE`; "REQUIERE VISA" = `VISA_REQUIRED`, com a AVE como alternativa quando habilitada |
+| EGY | FAQ do portal de e-Visa (Ministério do Interior): lista de nacionalidades, taxas e requisitos | `E_VISA` com entrada única (US$30) e múltipla (US$65); origens fora da lista ficam de fora, porque a página não diz se são isentas ou pedem visto no consulado |
+| BRA | Quadro Geral de Regime de Vistos (Itamaraty) | sem scraper: o quadro só existe em PDF, e o `robots.txt` do gov.br proíbe PDFs em `/mre` (`Disallow: /mre/*.pdf$`). Os pares com destino Brasil entram pela correção manual (`dataOrigin = MANUAL`), com a URL do quadro como fonte |
+
+- Em listas onde "não constar" ou "célula vazia" significa um resultado (Reino Unido, África
+  do Sul, Argentina), há também um mínimo de linhas com cada resultado: uma coluna lida no
+  lugar errado faria todo mundo parecer isento (ou todo mundo precisar de visto), e nesse caso a
+  coleta falha.
+
 - Todo acesso passa pelo `HtmlFetcher`, que:
   - só aceita `https`;
   - se identifica com um User-Agent honesto, com link para o repositório;
@@ -128,6 +138,11 @@ travel.state.gov e france-visas). O sistema **não** tenta contornar esses bloqu
 coerente com a delimitação legal do TCC. Para esses casos as alternativas são:
 outra fonte oficial do mesmo governo, um documento oficial publicado (PDF) ou
 entrada manual por um admin, sempre com `dataOrigin = MANUAL` e a URL de referência.
+
+O mesmo vale para o `robots.txt`: o do gov.br não bloqueia o robô, mas proíbe PDFs em `/mre`,
+e o quadro de vistos do Brasil só é publicado em PDF. Por isso o Brasil, como destino, não
+tem scraper. Já um `robots.txt` que responde 4xx (África do Sul `403`, Argentina e Egito `404`)
+é tratado como "tudo permitido", conforme a RFC 9309.
 
 ## Administração dos dados (sprint 5)
 
