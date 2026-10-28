@@ -40,3 +40,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # MongoDB 8.x refuses to start on Linux kernels 6.19 to 7.0.13 (SERVER-121912); stay on 7.0.
+      - dependency-name: mongo
+        versions: [">=8.0"]

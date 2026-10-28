@@ -103,6 +103,38 @@ class CountryNamesTest {
                 .containsExactly("Kosovo");
     }
 
+    /**
+     * South Africa: a country missing from the exemption list is treated as visa required, so every
+     * listed country must be recognized. Left over: organisations' laissez-passers and territories
+     * without an ISO code of their own.
+     */
+    @Test
+    void recognizesEveryCountryOnTheSouthAfricanExemptionList() throws IOException {
+        List<String> names = fixture("zaf/exempt-countries.html").select("table").first().select("tr").stream()
+                .filter(row -> row.select("strong").isEmpty())
+                .map(row -> row.select("> td").first())
+                .filter(cell -> cell != null)
+                .map(Element::text)
+                .toList();
+
+        assertThat(names).hasSizeGreaterThan(100);
+        assertThat(names)
+                .filteredOn(name -> CountryNames.iso3(name, Locale.ENGLISH).isEmpty())
+                .filteredOn(name -> !name.toLowerCase(Locale.ROOT).contains("passer"))
+                .containsExactlyInAnyOrder("British Antarctic Territory", "Ducie and Oeno Islands", "Henderson");
+    }
+
+    /** Egypt: an unrecognized name only leaves that origin out, but in-scope origins must be found. */
+    @Test
+    void recognizesTheEgyptianEVisaList() throws IOException {
+        List<String> names =
+                fixture("egy/faq.html").select(".countries-grid label").eachText();
+
+        assertThat(names)
+                .filteredOn(name -> CountryNames.iso3(name, Locale.ENGLISH).isEmpty())
+                .containsExactly("China/Taiwan", "Republic of Kosovo");
+    }
+
     private Document fixture(String path) throws IOException {
         try (InputStream input = getClass().getResourceAsStream("/fixtures/" + path)) {
             return Jsoup.parse(new String(input.readAllBytes(), StandardCharsets.UTF_8));

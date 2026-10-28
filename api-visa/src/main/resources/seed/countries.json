@@ -4,7 +4,7 @@
     "languages": ["pt"], "origin": true, "destination": true,
     "officialSources": [
       {"url": "https://www.gov.br/pf/pt-br/assuntos/imigracao", "description": "Polícia Federal - imigração", "language": "pt", "verifiedAt": "2026-10-23T00:00:00Z"},
-      {"url": "https://www.gov.br/mre/pt-br", "description": "Itamaraty - Quadro Geral de Regime de Vistos (URL exata a confirmar)", "language": "pt", "verifiedAt": null}
+      {"url": "https://www.gov.br/mre/pt-br/assuntos/portal-consular/vistos/quadro-geral-de-regime-de-vistos-para-entrada-de-estrangeiros-no-brasil", "description": "Itamaraty - Quadro Geral de Regime de Vistos (o quadro em si é PDF, bloqueado a robôs pelo robots.txt; entrada manual)", "language": "pt", "verifiedAt": "2026-10-28T00:00:00Z"}
     ]
   },
   {
@@ -65,14 +65,15 @@
     "iso3": "EGY", "iso2": "EG", "name": "Egypt", "continent": "AFRICA", "currency": "EGP",
     "languages": ["ar", "en"], "origin": false, "destination": true,
     "officialSources": [
-      {"url": "https://visa2egypt.gov.eg/eVisa/Home", "description": "Egypt e-Visa portal", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+      {"url": "https://visa2egypt.gov.eg/eVisa/Home", "description": "Egypt e-Visa portal", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://visa2egypt.gov.eg/eVisa/FAQ", "description": "Egypt e-Visa portal - FAQ: eligible nationalities, fees and requirements", "language": "en", "verifiedAt": "2026-10-28T00:00:00Z"}
     ]
   },
   {
     "iso3": "ARG", "iso2": "AR", "name": "Argentina", "continent": "SOUTH_AMERICA", "currency": "ARS",
     "languages": ["es"], "origin": false, "destination": true,
     "officialSources": [
-      {"url": "https://www.argentina.gob.ar/interior/migraciones", "description": "Dirección Nacional de Migraciones (URL exata a confirmar)", "language": "es", "verifiedAt": null}
+      {"url": "https://www.migraciones.gob.ar/accesible/indexdnm.php?visas", "description": "Dirección Nacional de Migraciones - Régimen de Visas", "language": "es", "verifiedAt": "2026-10-28T00:00:00Z"}
     ]
   }
 ]
