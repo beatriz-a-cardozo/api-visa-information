@@ -51,14 +51,15 @@
     "languages": ["en"], "origin": false, "destination": true,
     "officialSources": [
       {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/electronic-travel-authority-601", "description": "Home Affairs - Electronic Travel Authority (601)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
-      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/evisitor-651", "description": "Home Affairs - eVisitor (651)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/evisitor-651", "description": "Home Affairs - eVisitor (651)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600/tourist-stream-overseas", "description": "Home Affairs - Visitor (600), tourist stream (apply outside Australia)", "language": "en", "verifiedAt": "2026-10-28T00:00:00Z"}
     ]
   },
   {
     "iso3": "KOR", "iso2": "KR", "name": "South Korea", "continent": "ASIA", "currency": "KRW",
     "languages": ["ko", "en"], "origin": false, "destination": true,
     "officialSources": [
-      {"url": "https://www.visa.go.kr/openPage.do?MENU_ID=10102", "description": "Korea Visa Portal - visa waiver", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+      {"url": "https://www.visa.go.kr/openPage.do?MENU_ID=10102", "description": "Korea Visa Portal - visa waiver (lista só por formulário com sessão; entrada manual)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
     ]
   },
   {
