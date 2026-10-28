@@ -46,8 +46,10 @@ Cada item vira um card no board e, em geral, um PR para `dev`.
 ## Sprint 6+ — Scrapers por destino
 
 Um card por destino, cada um com fixture e teste:
-DEU, BRA, JPN, ZAF, AUS, KOR, EGY, ARG; e evoluir CAN e GBR para ler a lista de
-nacionalidades (todas as origens), não só a página de requisitos.
+
+- [x] CAN e GBR lendo a lista de nacionalidades (todas as origens), não só a página de requisitos
+- [x] DEU
+- [ ] BRA, JPN, ZAF, AUS, KOR, EGY, ARG
 
 ## Deploy
 

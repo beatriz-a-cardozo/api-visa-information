@@ -2,7 +2,9 @@ package com.tcc.api_visa.scraper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tcc.api_visa.domain.VisaPolicy;
 import com.tcc.api_visa.scraper.destination.CanadaScraper;
+import com.tcc.api_visa.scraper.destination.GermanyScraper;
 import com.tcc.api_visa.scraper.destination.UnitedKingdomScraper;
 import com.tcc.api_visa.scraper.fetch.HtmlFetcher;
 import com.tcc.api_visa.scraper.fetch.PoliteHtmlFetcher;
@@ -39,19 +41,29 @@ class LiveSourcesTest {
                 new RobotsTxtPolicy(PROPERTIES, Clock.systemUTC()),
                 new PublicUrlValidator(HostResolver.system()));
         RequirementClassifier classifier = new RequirementClassifier();
-        return Stream.of(new CanadaScraper(fetcher, classifier), new UnitedKingdomScraper(fetcher, classifier));
+        return Stream.of(
+                new CanadaScraper(fetcher, classifier),
+                new UnitedKingdomScraper(fetcher, classifier),
+                new GermanyScraper(fetcher, classifier));
     }
 
+    /** Every origin in scope gets a known policy, so a site change cannot silently drop or misread one. */
     @ParameterizedTest(name = "{0}")
     @MethodSource("scrapers")
     void scraperStillUnderstandsTheOfficialPage(VisaScraper scraper) {
-        List<ScrapedVisaRequirement> results = scraper.scrape(Set.of("BRA", "JPN", "DEU", "CAN", "ZAF"));
+        Set<String> origins = Set.of("BRA", "JPN", "DEU", "CAN", "ZAF");
 
-        assertThat(results).isNotEmpty();
+        List<ScrapedVisaRequirement> results = scraper.scrape(origins);
+
+        assertThat(results)
+                .extracting(ScrapedVisaRequirement::originIso3)
+                .containsExactlyInAnyOrderElementsOf(origins.stream()
+                        .filter(origin -> !origin.equals(scraper.destinationIso3()))
+                        .toList());
         assertThat(results).allSatisfy(result -> {
             assertThat(result.destinationIso3()).isEqualTo(scraper.destinationIso3());
+            assertThat(result.content().policy()).isNotEqualTo(VisaPolicy.UNKNOWN);
             assertThat(result.content().visas()).isNotEmpty();
-            assertThat(result.content().visas().getFirst().requirements()).isNotEmpty();
         });
     }
 }
