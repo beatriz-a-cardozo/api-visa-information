@@ -222,6 +222,11 @@ tem scraper. Já um `robots.txt` que responde 4xx (África do Sul `403`, Argenti
 - **App**: Render (web service gratuito, a partir do Dockerfile). O plano gratuito
   hiberna após inatividade, então o agendamento não depende do processo ficar no ar.
 - **Banco**: MongoDB Atlas M0, com usuário de privilégio mínimo e lista de IPs.
+- **Versão do MongoDB local e no CI**: 7.0 (compose e Testcontainers). O 8.x se recusa a
+  iniciar em kernels Linux de 6.19 a 7.0.13 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)),
+  e runners do GitHub já usam esse kernel; o Dependabot ignora o `mongo` 8.x por isso. A
+  aplicação não usa recursos exclusivos do 8.0, então funciona igual no Atlas, que é gerenciado
+  e não depende do kernel da máquina do usuário.
 - **Agendamento**: workflow agendado do GitHub Actions chama o endpoint admin de
   coleta (acorda o serviço e dispara o scraping).
 - **E-mail de falha**: SMTP genérico (Spring Mail). Provedor sugerido: Brevo

@@ -9,9 +9,13 @@ import org.testcontainers.mongodb.MongoDBContainer;
 @TestConfiguration(proxyBeanMethods = false)
 public class MongoTestcontainersConfiguration {
 
+    /**
+     * MongoDB 7.0, not 8.x: 8.x refuses to start on Linux kernels 6.19 to 7.0.13 (SERVER-121912),
+     * which some GitHub runners already use. Same version as docker-compose.yml.
+     */
     @Bean
     @ServiceConnection
     MongoDBContainer mongoDbContainer() {
-        return new MongoDBContainer("mongo:8.0");
+        return new MongoDBContainer("mongo:7.0");
     }
 }

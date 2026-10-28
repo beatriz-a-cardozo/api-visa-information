@@ -31,7 +31,8 @@ services:
     restart: unless-stopped
 
   mongo:
-    image: mongo:8.0@sha256:4a4ab5d4834207389e0d7270fac988e21ffedccecba77991a552f755df229907
+    # 7.0, not 8.x: 8.x refuses to start on Linux kernels 6.19 to 7.0.13 (MongoDB SERVER-121912).
+    image: mongo:7.0@sha256:8bb4442761a63a8dda452744082cdac9644b429807eb977b42324a63cef59ca4
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
