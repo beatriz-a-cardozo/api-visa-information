@@ -23,6 +23,8 @@ public class CollectionLog {
     @Indexed
     private String destinationIso3;
 
+    private TravelPurpose purpose;
+
     private String scraper;
 
     @Indexed(name = "started_at_ttl", expireAfter = "180d")

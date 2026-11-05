@@ -8,11 +8,14 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-/** Current visa information for one origin/destination pair. */
+/** Current visa information for one origin/destination pair and travel purpose. */
 @Getter
 @Setter
 @Document(collection = "visa_requirements")
-@CompoundIndex(name = "origin_destination", def = "{'originIso3': 1, 'destinationIso3': 1}", unique = true)
+@CompoundIndex(
+        name = "origin_destination_purpose",
+        def = "{'originIso3': 1, 'destinationIso3': 1, 'purpose': 1}",
+        unique = true)
 public class VisaRequirement {
 
     @Id
@@ -20,6 +23,7 @@ public class VisaRequirement {
 
     private String originIso3;
     private String destinationIso3;
+    private TravelPurpose purpose;
     private VisaRequirementContent content;
 
     /** SHA-256 of {@link #content}, used to detect changes between collections. */

@@ -7,6 +7,7 @@ import com.tcc.api_visa.domain.DataOrigin;
 import com.tcc.api_visa.domain.Money;
 import com.tcc.api_visa.domain.Requirement;
 import com.tcc.api_visa.domain.RequirementType;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaOption;
 import com.tcc.api_visa.domain.VisaPolicy;
@@ -48,21 +49,26 @@ class RepositoryIntegrationTest {
     }
 
     @Test
-    void storesOneDocumentPerOriginDestinationPair() {
-        visaRequirementRepository.save(requirement("BRA", "DEU"));
+    void storesOneDocumentPerPairAndPurpose() {
+        visaRequirementRepository.save(requirement("BRA", "DEU", TravelPurpose.TOURISM));
 
-        assertThatThrownBy(() -> visaRequirementRepository.save(requirement("BRA", "DEU")))
+        assertThatThrownBy(() -> visaRequirementRepository.save(requirement("BRA", "DEU", TravelPurpose.TOURISM)))
                 .isInstanceOf(DuplicateKeyException.class);
-        assertThat(visaRequirementRepository.findByOriginIso3AndDestinationIso3("BRA", "DEU"))
-                .isPresent();
+        visaRequirementRepository.save(requirement("BRA", "DEU", TravelPurpose.STUDY));
+
+        assertThat(List.of(TravelPurpose.TOURISM, TravelPurpose.STUDY))
+                .allSatisfy(
+                        purpose -> assertThat(visaRequirementRepository.findByOriginIso3AndDestinationIso3AndPurpose(
+                                        "BRA", "DEU", purpose))
+                                .isPresent());
     }
 
     @Test
     void keepsMoneyExactAndStoresItAsDecimal128() {
-        visaRequirementRepository.save(requirement("JPN", "GBR"));
+        visaRequirementRepository.save(requirement("JPN", "GBR", TravelPurpose.TOURISM));
 
         VisaRequirement loaded = visaRequirementRepository
-                .findByOriginIso3AndDestinationIso3("JPN", "GBR")
+                .findByOriginIso3AndDestinationIso3AndPurpose("JPN", "GBR", TravelPurpose.TOURISM)
                 .orElseThrow();
         assertThat(loaded.getContent().visas().getFirst().cost()).isEqualTo(Money.of("135.50", "GBP"));
 
@@ -88,19 +94,23 @@ class RepositoryIntegrationTest {
     }
 
     @Test
-    void returnsHistoryNewestFirst() {
+    void returnsTheHistoryOfOnePurposeNewestFirst() {
         visaHistoryRepository.saveAll(List.of(
-                history(Instant.parse("2026-01-01T00:00:00Z")), history(Instant.parse("2026-06-01T00:00:00Z"))));
+                history(Instant.parse("2026-01-01T00:00:00Z"), TravelPurpose.TOURISM),
+                history(Instant.parse("2026-06-01T00:00:00Z"), TravelPurpose.TOURISM),
+                history(Instant.parse("2026-03-01T00:00:00Z"), TravelPurpose.STUDY)));
 
-        assertThat(visaHistoryRepository.findByOriginIso3AndDestinationIso3OrderByChangedAtDesc("BRA", "CAN"))
+        assertThat(visaHistoryRepository.findByOriginIso3AndDestinationIso3AndPurposeOrderByChangedAtDesc(
+                        "BRA", "CAN", TravelPurpose.TOURISM))
                 .extracting(VisaHistory::getChangedAt)
                 .containsExactly(Instant.parse("2026-06-01T00:00:00Z"), Instant.parse("2026-01-01T00:00:00Z"));
     }
 
-    private static VisaRequirement requirement(String origin, String destination) {
+    private static VisaRequirement requirement(String origin, String destination, TravelPurpose purpose) {
         VisaRequirement requirement = new VisaRequirement();
         requirement.setOriginIso3(origin);
         requirement.setDestinationIso3(destination);
+        requirement.setPurpose(purpose);
         requirement.setContent(content());
         requirement.setContentHash("hash");
         requirement.setDataOrigin(DataOrigin.SCRAPER);
@@ -109,10 +119,11 @@ class RepositoryIntegrationTest {
         return requirement;
     }
 
-    private static VisaHistory history(Instant changedAt) {
+    private static VisaHistory history(Instant changedAt, TravelPurpose purpose) {
         VisaHistory history = new VisaHistory();
         history.setOriginIso3("BRA");
         history.setDestinationIso3("CAN");
+        history.setPurpose(purpose);
         history.setPreviousContent(content());
         history.setChangeOrigin(DataOrigin.SCRAPER);
         history.setChangedAt(changedAt);

@@ -6,6 +6,8 @@ public enum VisaPolicy {
     ELECTRONIC_TRAVEL_AUTHORIZATION,
     E_VISA,
     VISA_ON_ARRIVAL,
+    /** Entry without a visa; the residence permit is requested in the destination after arrival. */
+    PERMIT_AFTER_ENTRY,
     VISA_REQUIRED,
     /** The source was read, but it does not state the policy for this origin. */
     UNKNOWN

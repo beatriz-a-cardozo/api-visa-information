@@ -42,16 +42,30 @@ pública, `api.admin` para a administração).
 - **countries**: `_id` = ISO alpha-3. Guarda nome, continente, moeda (ISO 4217),
   idiomas, se é origem/destino e a lista de fontes oficiais (`url`, `language`,
   `verifiedAt`). `verifiedAt` vazio significa que a URL ainda não foi confirmada.
-- **visa_requirements**: um documento por par origem/destino, com índice único
-  `(originIso3, destinationIso3)`. Contém a política geral (`VISA_FREE`,
-  `VISA_REQUIRED`, `E_VISA` …), a lista de vistos disponíveis (tipo, estadia máxima,
+- **visa_requirements**: um documento por par origem/destino e finalidade (`purpose`:
+  `TOURISM` ou `STUDY`), com índice único `(originIso3, destinationIso3, purpose)`. Contém a
+  política geral (`VISA_FREE`, `VISA_REQUIRED`, `E_VISA`, `PERMIT_AFTER_ENTRY` …), a lista de
+  vistos disponíveis (tipo, estadia máxima,
   custo com moeda, requisitos), as URLs de origem, `collectedAt` (última coleta),
   `updatedAt` (última mudança de conteúdo), `contentHash` e `dataOrigin`
   (`SCRAPER` ou `MANUAL`).
-- **visa_history**: cópia do conteúdo anterior, gravada **só quando o hash muda**.
-  Índice TTL de 365 dias apaga sozinho o que passou de um ano.
-- **collection_logs**: uma entrada por execução de scraper (status, pares coletados,
-  pares alterados, erro). Índice TTL de 180 dias.
+- **visa_history**: cópia do conteúdo anterior, gravada **só quando o hash muda**, separada
+  por finalidade. Índice TTL de 365 dias apaga sozinho o que passou de um ano.
+- **collection_logs**: uma entrada por execução de scraper (destino, finalidade, status, pares
+  coletados, pares alterados, erro). Índice TTL de 180 dias.
+
+### Finalidade da viagem (piloto de estudo)
+
+A mesma origem pode precisar de coisas diferentes para turismo e para estudo: um brasileiro entra
+na Alemanha sem visto como turista, mas precisa de visto nacional para estudar. Por isso a
+finalidade faz parte da chave do par. `PERMIT_AFTER_ENTRY` cobre o caso "entra sem visto e pede a
+autorização de residência no destino", que `VISA_FREE` descreveria errado. O tipo de requisito
+`ACADEMIC_ADMISSION` cobre a vaga em escola ou universidade.
+
+Os dados gravados antes da finalidade são todos de turismo. Na inicialização, o
+`TravelPurposeMigration` marca como `TOURISM` os documentos sem `purpose` e remove os índices
+antigos (`origin_destination` e `pair_changed_at`); o índice único antigo impediria gravar a
+segunda finalidade do mesmo par. A migração pode rodar a cada início sem efeito.
 
 Valores em dinheiro usam `BigDecimal` + código da moeda, nunca `float`.
 Datas usam `Instant` (UTC).
@@ -76,8 +90,9 @@ resposta traz apenas o valor original, sem conversão.
 
 ## Coleta (scraping)
 
-- Um `VisaScraper` por país de destino. Ele lê as páginas de "lista de
-  nacionalidades" do governo e devolve um resultado por país de origem.
+- Um `VisaScraper` por país de destino e finalidade. Ele lê as páginas de "lista de
+  nacionalidades" do governo e devolve um resultado por país de origem. A finalidade padrão é
+  turismo; os scrapers de estudo (piloto com DEU e GBR) declaram `STUDY`.
 - Os nomes de país das listas viram código ISO pelo `CountryNames`, que usa os nomes do JDK
   no idioma da página (inglês, alemão) e uma lista de formas oficiais que o JDK não usa
   ("Korea, Republic of", "Kongo (Demokratische Republik)", "Türkiye"). Um teste confere que
@@ -96,6 +111,8 @@ resposta traz apenas o valor original, sem conversão.
 | ARG | Régimen de Visas (Dirección Nacional de Migraciones): tabela por nacionalidade, com a bandeira nomeada pelo código ISO | célula vazia em "Pasaporte Ordinario" = `VISA_FREE`; "REQUIERE VISA" = `VISA_REQUIRED`, com a AVE como alternativa quando habilitada |
 | EGY | FAQ do portal de e-Visa (Ministério do Interior): lista de nacionalidades, taxas e requisitos | `E_VISA` com entrada única (US$30) e múltipla (US$65); origens fora da lista ficam de fora, porque a página não diz se são isentas ou pedem visto no consulado |
 | AUS | Páginas do ETA (601), do eVisitor (651) e do Visitor (600, tourist stream) no Home Affairs. O conteúdo vem em JSON num campo oculto que o navegador renderiza; o scraper lê esse campo, sem executar JavaScript | `ELECTRONIC_TRAVEL_AUTHORIZATION` (AUD20 do app) para a lista do ETA, `E_VISA` (grátis) para a do eVisitor, as duas opções para quem está nas duas, e `VISA_REQUIRED` (Visitor 600) para os demais |
+| DEU (estudo) | "Längerfristige Aufenthalte über 90 Tage (nationale Visa)" e "Studium, Schulbesuch, Sprachkurs und Ausbildung" (Auswärtiges Amt). A lista de quem pode pedir o título de residência depois de entrar vem numa frase em alemão, com os nomes no genitivo; um nome desconhecido faz a coleta falhar | `PERMIT_AFTER_ENTRY` para a lista (entre as origens, JPN e CAN); os demais `VISA_REQUIRED` com o visto nacional (D). Requisitos da seção "Studium": admissão numa universidade e meios para o primeiro ano |
+| GBR (estudo) | Guia do Student visa no GOV.UK: visão geral, dinheiro e documentos | `VISA_REQUIRED` para todas as origens (irlandeses ficam de fora): Student visa, £558, até 5 anos em nível de graduação; requisitos de elegibilidade, valores mensais e documentos obrigatórios |
 | BRA | Quadro Geral de Regime de Vistos (Itamaraty) | sem scraper: o quadro só existe em PDF, e o `robots.txt` do gov.br proíbe PDFs em `/mre` (`Disallow: /mre/*.pdf$`). Os pares com destino Brasil entram pela correção manual (`dataOrigin = MANUAL`), com a URL do quadro como fonte |
 | JPN | Visa exemption arrangements (MOFA) | sem scraper: o site responde `403` a robôs, inclusive no `robots.txt`. Entrada manual |
 | KOR | Korea Visa Portal (Ministério da Justiça) | sem scraper: a lista de isenção só aparece depois de um formulário `POST` com sessão, e o site do MOFA coreano responde com um desafio de cookie anti-robô. Entrada manual |
@@ -119,7 +136,7 @@ resposta traz apenas o valor original, sem conversão.
 
 - `POST /admin/collections` inicia a coleta em segundo plano e responde `202` com o
   `runId`. Só uma coleta roda por vez (`409` se já houver outra). `?destination=GBR`
-  coleta um destino só.
+  coleta um destino só, em todas as finalidades.
 - Para cada scraper, o `CollectionService` grava um `CollectionLog` com status
   `SUCCESS`, `PARTIAL` (alguns pares falharam) ou `FAILED`. Um destino com falha não
   impede os outros.
@@ -152,8 +169,8 @@ Também não são usados desafios anti-robô (cookies de verificação, como o d
 navegação por formulário com sessão (como no portal de vistos coreano): o `HtmlFetcher` só faz
 `GET` simples, sem guardar cookies, para que a coleta continue sendo leitura de página pública.
 
-Situação em out/2026: dos 10 destinos, 7 têm scraper (CAN, GBR, DEU, ZAF, ARG, EGY, AUS) e 3
-dependem de entrada manual (BRA, JPN, KOR).
+Situação em nov/2026: dos 10 destinos, 7 têm scraper de turismo (CAN, GBR, DEU, ZAF, ARG, EGY,
+AUS) e 3 dependem de entrada manual (BRA, JPN, KOR). Estudo tem scraper para DEU e GBR (piloto).
 
 ## Administração dos dados (sprint 5)
 
@@ -162,12 +179,13 @@ dependem de entrada manual (BRA, JPN, KOR).
   update atômico no documento do país (`$push`, `$set` posicional, `$pull`), então dois admins
   editando ao mesmo tempo não perdem a alteração um do outro, e o seed nunca as sobrescreve.
   `verified: true` grava `verifiedAt` com a hora atual.
-- **Correção manual**: `PUT /admin/visas?origin=&destination=` grava o conteúdo com
+- **Correção manual**: `PUT /admin/visas?origin=&destination=&purpose=` (finalidade
+  `TOURISM` quando omitida) grava o conteúdo com
   `dataOrigin = MANUAL`, e a coleta passa a pular o par (`pairsSkipped`). Uma mudança real vai
   para o histórico com `changeOrigin = MANUAL`, como uma coletada. Toda correção exige ao menos
   uma URL de origem, para manter a rastreabilidade. `collectedAt` continua indicando a última
   leitura do site (nulo se o par nunca foi coletado).
-- `DELETE /admin/visas/manual?origin=&destination=` devolve o par ao scraper: o conteúdo fica
+- `DELETE /admin/visas/manual?origin=&destination=&purpose=` devolve o par ao scraper: o conteúdo fica
   até a próxima coleta, que o substitui (e o move para o histórico, se for diferente).
 - Se uma coleta e uma correção gravarem o mesmo par no mesmo instante, o `@Version` do documento
   faz uma delas falhar (`409 Concurrent update` para o admin), sem perder dados.
@@ -177,12 +195,13 @@ dependem de entrada manual (BRA, JPN, KOR).
 | Rota | Resposta |
 |------|----------|
 | `GET /api/v1/countries` | Países cobertos, com moeda, papel (origem/destino) e fontes oficiais |
-| `GET /api/v1/visas?origin=&destination=` | Política, vistos, custo nas duas moedas, URLs de origem, `dataOrigin`, `collectedAt` e `updatedAt` |
-| `GET /api/v1/visas/history?origin=&destination=` | Mudanças do último ano, da mais recente para a mais antiga |
+| `GET /api/v1/visas?origin=&destination=&purpose=` | Política, vistos, custo nas duas moedas, URLs de origem, `dataOrigin`, `collectedAt` e `updatedAt`. `purpose` é `TOURISM` (padrão) ou `STUDY` |
+| `GET /api/v1/visas/history?origin=&destination=&purpose=` | Mudanças do último ano para a finalidade, da mais recente para a mais antiga |
 
 - Códigos em ISO alfa-3 maiúsculo (`BRA`); outro formato responde `400`.
 - País fora do catálogo, ou fora do papel pedido (por exemplo `GBR` como origem), responde
-  `404 Unknown country`. Par válido ainda não coletado responde `404 No visa data`.
+  `404 Unknown country`. Par válido ainda não coletado para a finalidade responde
+  `404 No visa data`; finalidade desconhecida responde `400`.
   Origem igual ao destino responde `400`.
 - O histórico também filtra pela data, além do TTL: o monitor de TTL do MongoDB roda a
   cada minuto, então um registro vencido poderia aparecer por alguns segundos.

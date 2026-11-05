@@ -11,5 +11,7 @@ public enum RequirementType {
     ACCOMMODATION,
     RETURN_TICKET,
     CRIMINAL_RECORD,
+    /** A place offered by a school or university. */
+    ACADEMIC_ADMISSION,
     OTHER
 }

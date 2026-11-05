@@ -192,6 +192,26 @@ class AdminDataControllerTest {
     }
 
     @Test
+    void aManualCorrectionForStudyLeavesTourismAlone() throws Exception {
+        HttpResponse<String> created =
+                send("PUT", "/admin/visas?origin=BRA&destination=KOR&purpose=STUDY", manualVisa("150.00"));
+        assertThat(created.statusCode()).isEqualTo(201);
+        assertThat(created.body()).contains("\"purpose\":\"STUDY\"", "\"outcome\":\"CREATED\"");
+
+        assertThat(send("GET", "/api/v1/visas?origin=BRA&destination=KOR&purpose=STUDY", null)
+                        .body())
+                .contains("\"purpose\":\"STUDY\"", "\"dataOrigin\":\"MANUAL\"");
+        assertThat(send("GET", "/api/v1/visas?origin=BRA&destination=KOR", null).statusCode())
+                .isEqualTo(404);
+        assertThat(send("DELETE", "/admin/visas/manual?origin=BRA&destination=KOR", null)
+                        .statusCode())
+                .isEqualTo(404);
+        assertThat(send("DELETE", "/admin/visas/manual?origin=BRA&destination=KOR&purpose=STUDY", null)
+                        .statusCode())
+                .isEqualTo(204);
+    }
+
+    @Test
     void aReleasedPairGoesBackToTheScraper() throws Exception {
         send("PUT", "/admin/visas?origin=BRA&destination=GBR", manualVisa("150.00"));
 

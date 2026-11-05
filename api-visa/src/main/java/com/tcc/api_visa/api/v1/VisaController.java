@@ -1,5 +1,6 @@
 package com.tcc.api_visa.api.v1;
 
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaOption;
 import com.tcc.api_visa.domain.VisaRequirement;
 import com.tcc.api_visa.domain.VisaRequirementContent;
@@ -32,7 +33,8 @@ class VisaController {
     @Operation(
             summary = "What a citizen of the origin needs to enter the destination",
             description = "Fees come in the destination's currency and, when the ECB publishes a rate, also in"
-                    + " the origin's currency (an estimate, with the rate and its date).")
+                    + " the origin's currency (an estimate, with the rate and its date). Study data covers"
+                    + " Germany and the United Kingdom.")
     @GetMapping
     VisaResponse visa(
             @Parameter(description = "ISO alpha-3 of the traveller's country", example = "BRA")
@@ -42,14 +44,18 @@ class VisaController {
             @Parameter(description = "ISO alpha-3 of the country to visit", example = "GBR")
                     @RequestParam
                     @Pattern(regexp = ISO3)
-                    String destination) {
-        CurrentVisa current = visaQueryService.current(origin, destination);
+                    String destination,
+            @Parameter(description = "Why the traveller goes; tourism when omitted")
+                    @RequestParam(defaultValue = "TOURISM")
+                    TravelPurpose purpose) {
+        CurrentVisa current = visaQueryService.current(origin, destination, purpose);
         VisaRequirement requirement = current.requirement();
         VisaRequirementContent content = requirement.getContent();
         String originCurrency = current.origin().getCurrency();
         return new VisaResponse(
                 CountrySummary.from(current.origin()),
                 CountrySummary.from(current.destination()),
+                purpose,
                 content.policy(),
                 content.visas().stream()
                         .map(visa -> withOriginCurrency(visa, originCurrency))
@@ -64,11 +70,15 @@ class VisaController {
     @GetMapping("/history")
     VisaHistoryResponse history(
             @Parameter(example = "BRA") @RequestParam @Pattern(regexp = ISO3) String origin,
-            @Parameter(example = "GBR") @RequestParam @Pattern(regexp = ISO3) String destination) {
-        VisaChanges changes = visaQueryService.history(origin, destination);
+            @Parameter(example = "GBR") @RequestParam @Pattern(regexp = ISO3) String destination,
+            @Parameter(description = "Why the traveller goes; tourism when omitted")
+                    @RequestParam(defaultValue = "TOURISM")
+                    TravelPurpose purpose) {
+        VisaChanges changes = visaQueryService.history(origin, destination, purpose);
         return new VisaHistoryResponse(
                 CountrySummary.from(changes.origin()),
                 CountrySummary.from(changes.destination()),
+                purpose,
                 changes.changes().stream().map(VisaHistoryResponse.Change::from).toList());
     }
 

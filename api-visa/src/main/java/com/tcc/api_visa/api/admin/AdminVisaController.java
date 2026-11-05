@@ -1,5 +1,6 @@
 package com.tcc.api_visa.api.admin;
 
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.service.ManualVisaService;
 import com.tcc.api_visa.service.PairOutcome;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,10 +39,11 @@ class AdminVisaController {
     ResponseEntity<ManualVisaResponse> correct(
             @RequestParam @Pattern(regexp = ISO3) String origin,
             @RequestParam @Pattern(regexp = ISO3) String destination,
+            @RequestParam(defaultValue = "TOURISM") TravelPurpose purpose,
             @RequestBody @Valid ManualVisaRequest request) {
-        PairOutcome outcome = manualVisaService.correct(origin, destination, request.toContent());
+        PairOutcome outcome = manualVisaService.correct(origin, destination, purpose, request.toContent());
         HttpStatus status = outcome == PairOutcome.CREATED ? HttpStatus.CREATED : HttpStatus.OK;
-        return ResponseEntity.status(status).body(new ManualVisaResponse(origin, destination, outcome));
+        return ResponseEntity.status(status).body(new ManualVisaResponse(origin, destination, purpose, outcome));
     }
 
     @Operation(summary = "Hands the pair back to the scraper; the next collection replaces the manual data")
@@ -49,10 +51,11 @@ class AdminVisaController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void release(
             @RequestParam @Pattern(regexp = ISO3) String origin,
-            @RequestParam @Pattern(regexp = ISO3) String destination) {
-        manualVisaService.release(origin, destination);
+            @RequestParam @Pattern(regexp = ISO3) String destination,
+            @RequestParam(defaultValue = "TOURISM") TravelPurpose purpose) {
+        manualVisaService.release(origin, destination, purpose);
     }
 
     /** @param outcome {@code CREATED}, {@code CHANGED} or {@code UNCHANGED} (only marked as manual) */
-    record ManualVisaResponse(String origin, String destination, PairOutcome outcome) {}
+    record ManualVisaResponse(String origin, String destination, TravelPurpose purpose, PairOutcome outcome) {}
 }
