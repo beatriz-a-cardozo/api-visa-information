@@ -147,7 +147,7 @@ resposta traz apenas o valor original, sem conversão.
     e o log conta como `pairsSkipped`.
 - Se houver alguma falha, é enviado **um** alerta por execução (e-mail via SMTP, ou só log
   quando o e-mail não está configurado). Os dados anteriores continuam disponíveis.
-- Agendamento em produção: workflow `collect.yml` (todo dia às 05:00 UTC). Para quem roda
+- Agendamento em produção: workflow `collect.yml` (todo dia 1º do mês, às 05:17 UTC; quem precisar antes dispara pelo `workflow_dispatch` ou por `POST /admin/collections`). Para quem roda
   o app sempre ligado, existe também `COLLECTION_CRON` (desligado por padrão).
 
 ### Sites que bloqueiam robôs
