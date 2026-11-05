@@ -1,6 +1,7 @@
 package com.tcc.api_visa.service;
 
 import com.tcc.api_visa.domain.Country;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaRequirement;
 import com.tcc.api_visa.repository.CountryRepository;
@@ -34,22 +35,22 @@ public class VisaQueryService {
                 .toList();
     }
 
-    /** Current data for a pair. */
-    public CurrentVisa current(String originIso3, String destinationIso3) {
+    /** Current data for a pair and purpose. */
+    public CurrentVisa current(String originIso3, String destinationIso3, TravelPurpose purpose) {
         Pair pair = pair(originIso3, destinationIso3);
         VisaRequirement requirement = visaRequirementRepository
-                .findByOriginIso3AndDestinationIso3(originIso3, destinationIso3)
-                .orElseThrow(() -> new VisaDataNotFoundException(originIso3, destinationIso3));
+                .findByOriginIso3AndDestinationIso3AndPurpose(originIso3, destinationIso3, purpose)
+                .orElseThrow(() -> new VisaDataNotFoundException(originIso3, destinationIso3, purpose));
         return new CurrentVisa(pair.origin(), pair.destination(), requirement);
     }
 
     /** Changes of the last year, newest first. Empty when the content never changed. */
-    public VisaChanges history(String originIso3, String destinationIso3) {
+    public VisaChanges history(String originIso3, String destinationIso3, TravelPurpose purpose) {
         Pair pair = pair(originIso3, destinationIso3);
         Instant since = clock.instant().minus(HISTORY_WINDOW);
         List<VisaHistory> changes =
-                visaHistoryRepository.findByOriginIso3AndDestinationIso3AndChangedAtAfterOrderByChangedAtDesc(
-                        originIso3, destinationIso3, since);
+                visaHistoryRepository.findByOriginIso3AndDestinationIso3AndPurposeAndChangedAtAfterOrderByChangedAtDesc(
+                        originIso3, destinationIso3, purpose, since);
         return new VisaChanges(pair.origin(), pair.destination(), changes);
     }
 

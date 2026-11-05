@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.tcc.api_visa.domain.DataOrigin;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaRequirement;
 import com.tcc.api_visa.exchange.ExchangeRate;
@@ -84,6 +85,7 @@ class PublicApiTest {
         assertThat(response.body())
                 .contains(
                         "\"origin\":{\"iso3\":\"BRA\",\"name\":\"Brazil\",\"currency\":\"BRL\"}",
+                        "\"purpose\":\"TOURISM\"",
                         "\"policy\":\"VISA_REQUIRED\"",
                         "\"cost\":{\"amount\":135.50,\"currency\":\"GBP\"}",
                         "\"costInOriginCurrency\":{\"amount\":950.17,\"currency\":\"BRL\",\"rate\":7.0123,"
@@ -102,6 +104,29 @@ class PublicApiTest {
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body())
                 .contains("\"cost\":{\"amount\":135.50,\"currency\":\"GBP\"}", "\"costInOriginCurrency\":null");
+    }
+
+    @Test
+    void eachPurposeHasItsOwnDataAndTourismIsTheDefault() throws Exception {
+        visaRequirementRepository.save(requirement("BRA", "GBR", "135.50"));
+        VisaRequirement study = requirement("BRA", "GBR", "558");
+        study.setPurpose(TravelPurpose.STUDY);
+        visaRequirementRepository.save(study);
+
+        assertThat(get("/api/v1/visas?origin=BRA&destination=GBR&purpose=STUDY").body())
+                .contains("\"purpose\":\"STUDY\"", "\"amount\":558");
+        assertThat(get("/api/v1/visas?origin=BRA&destination=GBR").body())
+                .contains("\"purpose\":\"TOURISM\"", "\"amount\":135.50");
+    }
+
+    @Test
+    void answersNotFoundWhenOnlyAnotherPurposeWasCollected() throws Exception {
+        visaRequirementRepository.save(requirement("BRA", "GBR", "135.50"));
+
+        HttpResponse<String> response = get("/api/v1/visas?origin=BRA&destination=GBR&purpose=STUDY");
+
+        assertThat(response.statusCode()).isEqualTo(404);
+        assertThat(response.body()).contains("\"title\":\"No visa data\"", "No STUDY visa data");
     }
 
     @Test
@@ -134,6 +159,10 @@ class PublicApiTest {
         assertThat(get("/api/v1/visas?origin=BRA").statusCode()).isEqualTo(400);
         assertThat(get("/api/v1/visas/history?origin=BRA&destination=gbr").statusCode())
                 .isEqualTo(400);
+
+        HttpResponse<String> unknownPurpose = get("/api/v1/visas?origin=BRA&destination=GBR&purpose=WORK");
+        assertThat(unknownPurpose.statusCode()).isEqualTo(400);
+        assertThat(unknownPurpose.body()).doesNotContain("Exception");
     }
 
     @Test
@@ -142,12 +171,17 @@ class PublicApiTest {
         visaHistoryRepository.save(history(now.minus(Duration.ofDays(30)), "100.00"));
         visaHistoryRepository.save(history(now.minus(Duration.ofDays(5)), "120.00"));
         visaHistoryRepository.save(history(now.minus(Duration.ofDays(400)), "90.00"));
+        VisaHistory study = history(now.minus(Duration.ofDays(1)), "558.00");
+        study.setPurpose(TravelPurpose.STUDY);
+        visaHistoryRepository.save(study);
 
         HttpResponse<String> response = get("/api/v1/visas/history?origin=BRA&destination=GBR");
 
         assertThat(response.statusCode()).isEqualTo(200);
         String body = response.body();
-        assertThat(body).contains("\"changeOrigin\":\"SCRAPER\"").doesNotContain("90.00");
+        assertThat(body)
+                .contains("\"purpose\":\"TOURISM\"", "\"changeOrigin\":\"SCRAPER\"")
+                .doesNotContain("90.00", "558.00");
         assertThat(body.indexOf("120.00")).isLessThan(body.indexOf("100.00"));
         assertThat(body).contains("\"costInOriginCurrency\":null");
     }
@@ -245,6 +279,7 @@ class PublicApiTest {
         VisaRequirement requirement = new VisaRequirement();
         requirement.setOriginIso3(origin);
         requirement.setDestinationIso3(destination);
+        requirement.setPurpose(TravelPurpose.TOURISM);
         requirement.setContent(TestData.content(fee));
         requirement.setContentHash("hash");
         requirement.setDataOrigin(DataOrigin.SCRAPER);
@@ -257,6 +292,7 @@ class PublicApiTest {
         VisaHistory history = new VisaHistory();
         history.setOriginIso3("BRA");
         history.setDestinationIso3("GBR");
+        history.setPurpose(TravelPurpose.TOURISM);
         history.setPreviousContent(TestData.content(previousFee));
         history.setChangeOrigin(DataOrigin.SCRAPER);
         history.setChangedAt(changedAt);

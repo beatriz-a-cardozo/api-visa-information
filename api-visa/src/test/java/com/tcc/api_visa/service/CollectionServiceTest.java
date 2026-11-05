@@ -2,6 +2,7 @@ package com.tcc.api_visa.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.tcc.api_visa.domain.CollectionLog;
 import com.tcc.api_visa.domain.CollectionStatus;
 import com.tcc.api_visa.domain.Country;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.notification.FailureNotifier;
 import com.tcc.api_visa.repository.CollectionLogRepository;
 import com.tcc.api_visa.repository.CountryRepository;
@@ -106,6 +108,47 @@ class CollectionServiceTest {
         assertThat(log.getStatus()).isEqualTo(CollectionStatus.FAILED);
         assertThat(log.getErrorMessage()).contains("USA was not requested");
         verify(writer, never()).apply(any(), any());
+    }
+
+    @Test
+    void rejectsResultsForAnotherPurpose() {
+        CollectionService service = service(scraper(
+                "CAN",
+                origins ->
+                        List.of(new ScrapedVisaRequirement("BRA", "CAN", TravelPurpose.STUDY, TestData.content("1")))));
+
+        CollectionLog log = service.collect(null).logs().getFirst();
+
+        assertThat(log.getStatus()).isEqualTo(CollectionStatus.FAILED);
+        assertThat(log.getErrorMessage()).contains("Scraper returned purpose STUDY");
+        verify(writer, never()).apply(any(), any());
+    }
+
+    @Test
+    void aDestinationRunsTheScraperOfEveryPurposeAndLogsEachOne() {
+        VisaScraper study = new VisaScraper() {
+            @Override
+            public String destinationIso3() {
+                return "GBR";
+            }
+
+            @Override
+            public TravelPurpose purpose() {
+                return TravelPurpose.STUDY;
+            }
+
+            @Override
+            public List<ScrapedVisaRequirement> scrape(Set<String> originIso3s) {
+                return List.of(new ScrapedVisaRequirement("BRA", "GBR", TravelPurpose.STUDY, TestData.content("558")));
+            }
+        };
+        CollectionService service = service(study, working("GBR"), working("CAN"));
+
+        assertThat(service.collect("GBR").logs())
+                .extracting(CollectionLog::getPurpose, CollectionLog::getStatus)
+                .containsExactly(
+                        tuple(TravelPurpose.TOURISM, CollectionStatus.SUCCESS),
+                        tuple(TravelPurpose.STUDY, CollectionStatus.SUCCESS));
     }
 
     @Test

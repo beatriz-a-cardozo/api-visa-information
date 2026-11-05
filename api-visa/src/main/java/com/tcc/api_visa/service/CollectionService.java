@@ -51,7 +51,7 @@ public class CollectionService {
             @Qualifier("applicationTaskExecutor") TaskExecutor executor,
             Clock clock) {
         this.scrapers = scrapers.stream()
-                .sorted(Comparator.comparing(VisaScraper::destinationIso3))
+                .sorted(Comparator.comparing(VisaScraper::destinationIso3).thenComparing(VisaScraper::purpose))
                 .toList();
         this.countryRepository = countryRepository;
         this.logRepository = logRepository;
@@ -64,7 +64,8 @@ public class CollectionService {
     /**
      * Starts a collection in the background and returns its run id right away.
      *
-     * @param destinationIso3 collect only this destination, or every destination when {@code null}
+     * @param destinationIso3 collect only this destination (every purpose), or every destination when
+     *                        {@code null}
      * @throws UnknownDestinationException if no scraper reads that destination
      * @throws CollectionAlreadyRunningException if another collection has not finished
      */
@@ -132,6 +133,7 @@ public class CollectionService {
         CollectionLog entry = new CollectionLog();
         entry.setRunId(runId);
         entry.setDestinationIso3(scraper.destinationIso3());
+        entry.setPurpose(scraper.purpose());
         entry.setScraper(scraper.getClass().getSimpleName());
         entry.setStartedAt(clock.instant());
 
@@ -163,6 +165,9 @@ public class CollectionService {
     private static void checkBelongsTo(ScrapedVisaRequirement result, VisaScraper scraper, Set<String> origins) {
         if (!scraper.destinationIso3().equals(result.destinationIso3())) {
             throw new IllegalStateException("Scraper returned destination " + result.destinationIso3());
+        }
+        if (scraper.purpose() != result.purpose()) {
+            throw new IllegalStateException("Scraper returned purpose " + result.purpose());
         }
         if (!origins.contains(result.originIso3())) {
             throw new IllegalStateException("Origin " + result.originIso3() + " was not requested");

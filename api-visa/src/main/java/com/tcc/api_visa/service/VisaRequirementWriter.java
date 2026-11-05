@@ -1,6 +1,7 @@
 package com.tcc.api_visa.service;
 
 import com.tcc.api_visa.domain.DataOrigin;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaRequirement;
 import com.tcc.api_visa.domain.VisaRequirementContent;
@@ -26,13 +27,14 @@ public class VisaRequirementWriter {
 
     public PairOutcome apply(ScrapedVisaRequirement scraped, Instant now) {
         String newHash = hasher.hash(scraped.content());
-        Optional<VisaRequirement> existing = requirementRepository.findByOriginIso3AndDestinationIso3(
-                scraped.originIso3(), scraped.destinationIso3());
+        Optional<VisaRequirement> existing = requirementRepository.findByOriginIso3AndDestinationIso3AndPurpose(
+                scraped.originIso3(), scraped.destinationIso3(), scraped.purpose());
 
         if (existing.isEmpty()) {
             VisaRequirement created = new VisaRequirement();
             created.setOriginIso3(scraped.originIso3());
             created.setDestinationIso3(scraped.destinationIso3());
+            created.setPurpose(scraped.purpose());
             created.setContent(scraped.content());
             created.setContentHash(newHash);
             created.setDataOrigin(DataOrigin.SCRAPER);
@@ -69,15 +71,20 @@ public class VisaRequirementWriter {
      * {@code changeOrigin = MANUAL}. {@code collectedAt} keeps the last time the source was read.
      */
     public PairOutcome applyManual(
-            String originIso3, String destinationIso3, VisaRequirementContent content, Instant now) {
+            String originIso3,
+            String destinationIso3,
+            TravelPurpose purpose,
+            VisaRequirementContent content,
+            Instant now) {
         String newHash = hasher.hash(content);
-        Optional<VisaRequirement> existing =
-                requirementRepository.findByOriginIso3AndDestinationIso3(originIso3, destinationIso3);
+        Optional<VisaRequirement> existing = requirementRepository.findByOriginIso3AndDestinationIso3AndPurpose(
+                originIso3, destinationIso3, purpose);
 
         if (existing.isEmpty()) {
             VisaRequirement created = new VisaRequirement();
             created.setOriginIso3(originIso3);
             created.setDestinationIso3(destinationIso3);
+            created.setPurpose(purpose);
             created.setContent(content);
             created.setContentHash(newHash);
             created.setDataOrigin(DataOrigin.MANUAL);
@@ -105,6 +112,7 @@ public class VisaRequirementWriter {
         VisaHistory history = new VisaHistory();
         history.setOriginIso3(current.getOriginIso3());
         history.setDestinationIso3(current.getDestinationIso3());
+        history.setPurpose(current.getPurpose());
         history.setPreviousContent(current.getContent());
         history.setPreviousContentHash(current.getContentHash());
         history.setNewContentHash(newHash);

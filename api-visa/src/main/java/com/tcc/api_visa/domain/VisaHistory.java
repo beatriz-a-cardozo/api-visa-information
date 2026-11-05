@@ -15,7 +15,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @Setter
 @Document(collection = "visa_history")
-@CompoundIndex(name = "pair_changed_at", def = "{'originIso3': 1, 'destinationIso3': 1, 'changedAt': -1}")
+@CompoundIndex(
+        name = "pair_purpose_changed_at",
+        def = "{'originIso3': 1, 'destinationIso3': 1, 'purpose': 1, 'changedAt': -1}")
 public class VisaHistory {
 
     @Id
@@ -23,6 +25,7 @@ public class VisaHistory {
 
     private String originIso3;
     private String destinationIso3;
+    private TravelPurpose purpose;
     private VisaRequirementContent previousContent;
     private String previousContentHash;
     private String newContentHash;

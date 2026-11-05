@@ -1,14 +1,16 @@
 package com.tcc.api_visa.api.v1;
 
 import com.tcc.api_visa.domain.DataOrigin;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaPolicy;
 import com.tcc.api_visa.domain.VisaRequirementContent;
 import java.time.Instant;
 import java.util.List;
 
-/** Changes of the last year for one pair, newest first. */
-public record VisaHistoryResponse(CountrySummary origin, CountrySummary destination, List<Change> changes) {
+/** Changes of the last year for one pair and purpose, newest first. */
+public record VisaHistoryResponse(
+        CountrySummary origin, CountrySummary destination, TravelPurpose purpose, List<Change> changes) {
 
     /**
      * What the content was before {@link #changedAt}. Fees are shown as published at the time,

@@ -3,10 +3,12 @@ package com.tcc.api_visa.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tcc.api_visa.domain.DataOrigin;
+import com.tcc.api_visa.domain.TravelPurpose;
 import com.tcc.api_visa.domain.VisaHistory;
 import com.tcc.api_visa.domain.VisaRequirement;
 import com.tcc.api_visa.repository.VisaHistoryRepository;
 import com.tcc.api_visa.repository.VisaRequirementRepository;
+import com.tcc.api_visa.scraper.ScrapedVisaRequirement;
 import com.tcc.api_visa.support.MongoTestcontainersConfiguration;
 import com.tcc.api_visa.support.TestData;
 import java.time.Instant;
@@ -73,9 +75,11 @@ class VisaRequirementWriterIntegrationTest {
         assertThat(saved.getContent()).isEqualTo(TestData.content("140"));
         assertThat(saved.getUpdatedAt()).isEqualTo(SECOND);
 
-        assertThat(historyRepository.findByOriginIso3AndDestinationIso3OrderByChangedAtDesc("BRA", "GBR"))
+        assertThat(historyRepository.findByOriginIso3AndDestinationIso3AndPurposeOrderByChangedAtDesc(
+                        "BRA", "GBR", TravelPurpose.TOURISM))
                 .singleElement()
                 .satisfies(history -> {
+                    assertThat(history.getPurpose()).isEqualTo(TravelPurpose.TOURISM);
                     assertThat(history.getPreviousContent()).isEqualTo(TestData.content("135"));
                     assertThat(history.getPreviousContentHash()).isEqualTo(firstHash);
                     assertThat(history.getNewContentHash()).isEqualTo(saved.getContentHash());
@@ -97,9 +101,38 @@ class VisaRequirementWriterIntegrationTest {
         assertThat(historyRepository.findAll()).extracting(VisaHistory::getId).isEmpty();
     }
 
+    @Test
+    void eachPurposeOfAPairIsSavedAndComparedSeparately() {
+        writer.apply(TestData.scraped("BRA", "GBR", "135"), FIRST);
+        ScrapedVisaRequirement study =
+                new ScrapedVisaRequirement("BRA", "GBR", TravelPurpose.STUDY, TestData.content("558"));
+
+        assertThat(writer.apply(study, SECOND)).isEqualTo(PairOutcome.CREATED);
+        assertThat(writer.apply(TestData.scraped("BRA", "GBR", "135"), SECOND)).isEqualTo(PairOutcome.UNCHANGED);
+
+        assertThat(load(TravelPurpose.STUDY).getContent()).isEqualTo(TestData.content("558"));
+        assertThat(load().getContent()).isEqualTo(TestData.content("135"));
+        assertThat(historyRepository.count()).isZero();
+    }
+
+    @Test
+    void aManualCorrectionOnlyAffectsItsPurpose() {
+        writer.apply(TestData.scraped("BRA", "GBR", "135"), FIRST);
+
+        assertThat(writer.applyManual("BRA", "GBR", TravelPurpose.STUDY, TestData.content("558"), SECOND))
+                .isEqualTo(PairOutcome.CREATED);
+
+        assertThat(load(TravelPurpose.STUDY).getDataOrigin()).isEqualTo(DataOrigin.MANUAL);
+        assertThat(load().getDataOrigin()).isEqualTo(DataOrigin.SCRAPER);
+    }
+
     private VisaRequirement load() {
+        return load(TravelPurpose.TOURISM);
+    }
+
+    private VisaRequirement load(TravelPurpose purpose) {
         return requirementRepository
-                .findByOriginIso3AndDestinationIso3("BRA", "GBR")
+                .findByOriginIso3AndDestinationIso3AndPurpose("BRA", "GBR", purpose)
                 .orElseThrow();
     }
 }

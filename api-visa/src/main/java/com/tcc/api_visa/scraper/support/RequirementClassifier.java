@@ -28,6 +28,17 @@ public class RequirementClassifier {
                         "seguro de viaje",
                         "krankenversicherung"));
         KEYWORDS.put(
+                RequirementType.ACADEMIC_ADMISSION,
+                List.of(
+                        "offered a place",
+                        "acceptance for studies",
+                        "admission",
+                        "carta de aceite",
+                        "admision",
+                        "hochschule bewerben",
+                        "studienplatz",
+                        "zulassung"));
+        KEYWORDS.put(
                 RequirementType.INVITATION_LETTER,
                 List.of("invitation", "carta convite", "convite", "invitacion", "einladung"));
         KEYWORDS.put(
@@ -60,7 +71,9 @@ public class RequirementClassifier {
                         "meios de subsistencia",
                         "comprovante financeiro",
                         "solvencia",
-                        "finanzierung"));
+                        "finanzierung",
+                        "lebensunterhalt",
+                        "sperrkonto"));
         KEYWORDS.put(
                 RequirementType.ACCOMMODATION, List.of("accommodation", "hospedagem", "alojamiento", "unterkunft"));
         KEYWORDS.put(

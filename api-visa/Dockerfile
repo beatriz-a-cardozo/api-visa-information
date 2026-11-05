@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q package -DskipTests -Dspotl
     && java -Djarmode=tools -jar target/api-visa-*.jar extract --layers --launcher --destination extracted
 
 # Distroless: no shell or package manager, runs as an unprivileged user.
-FROM gcr.io/distroless/java21-debian13:nonroot@sha256:1de29c4b0865b76fb878ba0a7b5a1d80db189db99cf46a5d88ec9c253b5cea9b
+FROM gcr.io/distroless/java21-debian13:nonroot@sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d
 WORKDIR /app
 
 COPY --from=build /app/extracted/dependencies/ ./

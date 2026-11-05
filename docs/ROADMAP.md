@@ -55,6 +55,13 @@ Um card por destino, cada um com fixture e teste:
 - [x] JPN e KOR: sem scraper (MOFA do Japão responde `403` a robôs; o portal coreano só mostra a
       lista por formulário com sessão, e o MOFA coreano exige um cookie anti-robô); entrada manual
 
+## Piloto de vistos de estudante
+
+- [x] Finalidade da viagem (`TOURISM`/`STUDY`) na chave do par, no histórico, nos logs e na API
+      (`?purpose=`, turismo por padrão), com migração dos dados existentes
+- [x] Política `PERMIT_AFTER_ENTRY` e tipo de requisito `ACADEMIC_ADMISSION`
+- [x] Scrapers de estudo de DEU e GBR, com fixtures, testes e teste contra os sites reais
+
 ## Deploy
 
 - [ ] Atlas M0 + Render + secrets no GitHub

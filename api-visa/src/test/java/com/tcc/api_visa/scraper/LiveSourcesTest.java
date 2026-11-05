@@ -8,8 +8,10 @@ import com.tcc.api_visa.scraper.destination.AustraliaScraper;
 import com.tcc.api_visa.scraper.destination.CanadaScraper;
 import com.tcc.api_visa.scraper.destination.EgyptScraper;
 import com.tcc.api_visa.scraper.destination.GermanyScraper;
+import com.tcc.api_visa.scraper.destination.GermanyStudyScraper;
 import com.tcc.api_visa.scraper.destination.SouthAfricaScraper;
 import com.tcc.api_visa.scraper.destination.UnitedKingdomScraper;
+import com.tcc.api_visa.scraper.destination.UnitedKingdomStudyScraper;
 import com.tcc.api_visa.scraper.fetch.HtmlFetcher;
 import com.tcc.api_visa.scraper.fetch.PoliteHtmlFetcher;
 import com.tcc.api_visa.scraper.fetch.RobotsTxtPolicy;
@@ -52,7 +54,9 @@ class LiveSourcesTest {
                 new SouthAfricaScraper(fetcher),
                 new ArgentinaScraper(fetcher, classifier),
                 new EgyptScraper(fetcher, classifier),
-                new AustraliaScraper(fetcher, classifier));
+                new AustraliaScraper(fetcher, classifier),
+                new GermanyStudyScraper(fetcher, classifier),
+                new UnitedKingdomStudyScraper(fetcher, classifier));
     }
 
     /** Every origin in scope gets a known policy, so a site change cannot silently drop or misread one. */
