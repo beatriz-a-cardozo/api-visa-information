@@ -27,8 +27,8 @@
 		<crawler-commons.version>1.6</crawler-commons.version>
 		<bucket4j.version>8.21.0</bucket4j.version>
 		<springdoc.version>3.1.1</springdoc.version>
-		<spotless.version>3.10.4</spotless.version>
-		<jacoco.version>0.8.15</jacoco.version>
+		<spotless.version>3.11.0</spotless.version>
+		<jacoco.version>0.8.16</jacoco.version>
 		<!-- Minimum line coverage enforced by `mvn verify`. Raise it as the project grows. -->
 		<jacoco.minimum.line.coverage>0.70</jacoco.minimum.line.coverage>
 		<!-- Tests tagged "live" hit the real websites; they run only in the scheduled live-sources workflow. -->
