@@ -1,0 +1,95 @@
+# Deploys to Render after the CI passes on a push to main. Needs, in Settings > Secrets and variables > Actions:
+#   variable API_BASE_URL            (e.g. https://api-visa.onrender.com)
+#   secret   RENDER_DEPLOY_HOOK_URL  (Render > service > Settings > Deploy Hook)
+#   secret   RENDER_API_KEY          (Render > Account Settings > API Keys; used to follow the deploy)
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    # Only a green CI on a push to main (not a PR targeting main).
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.API_BASE_URL }}
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$DEPLOY_HOOK_URL" ] || [ -z "$RENDER_API_KEY" ]; then
+            echo "API_BASE_URL, RENDER_DEPLOY_HOOK_URL or RENDER_API_KEY not configured yet; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Start the deploy
+        id: start
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          deploy_id=$(curl -fsS -X POST --max-time 30 "$DEPLOY_HOOK_URL" | jq -r '.deploy.id // empty')
+          if [ -z "$deploy_id" ]; then
+            echo "Render did not return a deploy id"
+            exit 1
+          fi
+          # The hook URL is https://api.render.com/deploy/<service id>?key=...
+          service_id=$(echo "$DEPLOY_HOOK_URL" | sed -E 's|.*/deploy/([^?]+).*|\1|')
+          echo "Deploy $deploy_id started"
+          echo "deploy_id=$deploy_id" >> "$GITHUB_OUTPUT"
+          echo "service_id=$service_id" >> "$GITHUB_OUTPUT"
+
+      # Render builds the image and only switches traffic once the health check passes.
+      - name: Wait for the deploy
+        if: steps.config.outputs.ready == 'true'
+        env:
+          DEPLOY_ID: ${{ steps.start.outputs.deploy_id }}
+          SERVICE_ID: ${{ steps.start.outputs.service_id }}
+        run: |
+          for _ in $(seq 1 75); do
+            status=$(curl -fsS --max-time 30 -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$SERVICE_ID/deploys/$DEPLOY_ID" | jq -r '.status')
+            echo "Status: $status"
+            case "$status" in
+              live) exit 0 ;;
+              build_failed|update_failed|pre_deploy_failed|canceled|deactivated) exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "Deploy did not finish in time"
+          exit 1
+
+      - name: Smoke test
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          curl -fsS --retry 6 --retry-delay 20 --retry-all-errors --max-time 90 "$API_BASE_URL/actuator/health" | grep -q '"status":"UP"'
+          curl -fsS --max-time 30 "$API_BASE_URL/api/v1/countries" > /dev/null
+          # Same checks as the CI: Actuator shows only health, and /admin needs the key.
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$API_BASE_URL/actuator/env")" = "404"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API_BASE_URL/admin/collections")" = "401"
+          echo "Production is up"

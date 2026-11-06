@@ -65,5 +65,6 @@ Um card por destino, cada um com fixture e teste:
 ## Deploy
 
 - [ ] Atlas M0 + Render + secrets no GitHub
-- [ ] Workflow de deploy disparado por push na `main`
-- [ ] Monitor agendado dos scrapers contra os sites reais
+- [x] Workflow de deploy disparado pelo CI verde na `main` (deploy hook do Render, espera o deploy
+      ficar `live` e faz smoke test) e serviço descrito em `render.yaml`
+- [x] Monitor agendado dos scrapers contra os sites reais (`live-sources.yml`, abre issue na falha)
