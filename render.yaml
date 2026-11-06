@@ -2,7 +2,7 @@
 # Secrets are not here: "sync: false" makes Render ask for each value when the Blueprint is created.
 services:
   - type: web
-    name: api-visa
+    name: visalog
     runtime: docker
     plan: free
     # Same region as the Atlas cluster (AWS us-east-1), so database calls stay short.
