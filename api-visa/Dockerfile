@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Base images are pinned by digest; Dependabot opens a PR when a new one is published.
 
-FROM eclipse-temurin:21-jdk-noble@sha256:107215954359f1ab0be058a247d7c64ed6e69c71c1682d471d38ef751ec8e964 AS build
+FROM eclipse-temurin:25-jdk-noble@sha256:95e350ad1eb738f943e141640f7e3d797e483359a3b33c3864255bfd1ad71f8a AS build
 WORKDIR /app
 
 COPY --chmod=755 mvnw ./
