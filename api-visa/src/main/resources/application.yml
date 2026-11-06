@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: api-visa
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/api_visa}
+  data:
+    mongodb:
+      auto-index-creation: true
+  threads:
+    virtual:
+      enabled: true
+  # SMTP for failure alerts (Brevo in production). Empty host = alerts only go to the log.
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  # Render (and most hosts) tell the app which port to listen on through PORT.
+  port: ${PORT:8080}
+  shutdown: graceful
+  # Render and other hosts terminate TLS in a proxy; trust its X-Forwarded-* headers.
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # Database details are not public.
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    # The SMTP server being down must not mark the API as down.
+    mail:
+      enabled: false
+
+api-visa:
+  scraper:
+    user-agent: "api-visa-tcc/0.1 (+https://github.com/beatriz-a-cardozo/api-visa-information)"
+    timeout: 20s
+    min-delay-per-host: 2s
+    max-body-bytes: 5242880
+    respect-robots-txt: true
+  admin:
+    # Secret for the X-Admin-Key header (min. 32 chars). Empty = /admin is closed to everyone.
+    api-key: ${ADMIN_API_KEY:}
+  notification:
+    email-to: ${NOTIFICATION_EMAIL_TO:}
+    email-from: ${NOTIFICATION_EMAIL_FROM:}
+  collection:
+    # Spring cron (sec min hour day month weekday). "-" disables it; production uses GitHub Actions.
+    cron: ${COLLECTION_CRON:-}
+  exchange:
+    # European Central Bank rates via Frankfurter (free, no key).
+    base-url: https://api.frankfurter.dev/v1
+    timeout: 5s
+    cache-ttl: 12h
+  rate-limit:
+    # Requests per client IP to /api/**; over it the client gets 429 with Retry-After.
+    capacity: ${RATE_LIMIT_CAPACITY:60}
+    period: 1m
+  cors:
+    # Websites allowed to call /api/** from a browser, comma-separated (https://app.example.org).
+    # Empty = none; servers and curl are not affected by CORS.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  # Only the API itself, not Actuator or error endpoints.
+  paths-to-match: /api/**, /admin/**

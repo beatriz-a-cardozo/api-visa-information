@@ -1,0 +1,42 @@
+package com.tcc.api_visa.domain;
+
+import java.time.Instant;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+/** Audit entry for one scraper run. Removed by MongoDB after 180 days. */
+@Getter
+@Setter
+@Document(collection = "collection_logs")
+public class CollectionLog {
+
+    @Id
+    private String id;
+
+    /** Groups the logs of every scraper started by the same collection run. */
+    @Indexed
+    private String runId;
+
+    @Indexed
+    private String destinationIso3;
+
+    private TravelPurpose purpose;
+
+    private String scraper;
+
+    @Indexed(name = "started_at_ttl", expireAfter = "180d")
+    private Instant startedAt;
+
+    private Instant finishedAt;
+    private CollectionStatus status;
+    private int pairsCollected;
+    private int pairsChanged;
+
+    /** Pairs left untouched because an administrator corrected them manually. */
+    private int pairsSkipped;
+
+    private String errorMessage;
+}

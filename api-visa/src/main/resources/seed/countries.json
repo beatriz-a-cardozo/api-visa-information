@@ -1,0 +1,83 @@
+[
+  {
+    "iso3": "BRA", "iso2": "BR", "name": "Brazil", "continent": "SOUTH_AMERICA", "currency": "BRL",
+    "languages": ["pt"], "origin": true, "destination": true,
+    "officialSources": [
+      {"url": "https://www.gov.br/pf/pt-br/assuntos/imigracao", "description": "Polícia Federal - imigração", "language": "pt", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.gov.br/mre/pt-br/assuntos/portal-consular/vistos/quadro-geral-de-regime-de-vistos-para-entrada-de-estrangeiros-no-brasil", "description": "Itamaraty - Quadro Geral de Regime de Vistos (o quadro em si é PDF, bloqueado a robôs pelo robots.txt; entrada manual)", "language": "pt", "verifiedAt": "2026-10-28T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "JPN", "iso2": "JP", "name": "Japan", "continent": "ASIA", "currency": "JPY",
+    "languages": ["ja", "en"], "origin": true, "destination": true,
+    "officialSources": [
+      {"url": "https://www.mofa.go.jp/j_info/visit/visa/short/novisa.html", "description": "MOFA - visa exemption arrangements (respondeu 403 a robôs em out/2026)", "language": "en", "verifiedAt": null}
+    ]
+  },
+  {
+    "iso3": "DEU", "iso2": "DE", "name": "Germany", "continent": "EUROPE", "currency": "EUR",
+    "languages": ["de"], "origin": true, "destination": true,
+    "officialSources": [
+      {"url": "https://www.auswaertiges-amt.de/de/service/visa-und-aufenthalt/staatenliste-zur-visumpflicht-207820", "description": "Auswärtiges Amt - Staatenliste zur Visumpflicht", "language": "de", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.auswaertiges-amt.de/de/service/visa-und-aufenthalt/nationale-visa", "description": "Auswärtiges Amt - nationale Visa (Aufenthalte über 90 Tage)", "language": "de", "verifiedAt": "2026-11-05T00:00:00Z"},
+      {"url": "https://www.auswaertiges-amt.de/de/service/visa-und-aufenthalt/schulbesuch-studium-sprachkurs-in-deutschland-2230586", "description": "Auswärtiges Amt - Studium, Schulbesuch, Sprachkurs und Ausbildung", "language": "de", "verifiedAt": "2026-11-05T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "CAN", "iso2": "CA", "name": "Canada", "continent": "NORTH_AMERICA", "currency": "CAD",
+    "languages": ["en", "fr"], "origin": true, "destination": true,
+    "officialSources": [
+      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/entry-requirements-country.html", "description": "IRCC - entry requirements by country", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eligibility.html", "description": "IRCC - visitor visa eligibility", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta.html", "description": "IRCC - electronic travel authorization (eTA)", "language": "en", "verifiedAt": "2026-10-27T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "ZAF", "iso2": "ZA", "name": "South Africa", "continent": "AFRICA", "currency": "ZAR",
+    "languages": ["en"], "origin": true, "destination": true,
+    "officialSources": [
+      {"url": "https://www.dha.gov.za/index.php/immigration-services/exempt-countries", "description": "Department of Home Affairs - exempt countries", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "GBR", "iso2": "GB", "name": "United Kingdom", "continent": "EUROPE", "currency": "GBP",
+    "languages": ["en"], "origin": false, "destination": true,
+    "officialSources": [
+      {"url": "https://www.gov.uk/guidance/immigration-rules/immigration-rules-appendix-visitor-visa-national-list", "description": "Immigration Rules - Appendix Visitor: visa national list", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.gov.uk/standard-visitor/overview", "description": "GOV.UK - Standard Visitor", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://www.gov.uk/eta/apply", "description": "GOV.UK - apply for an electronic travel authorisation (ETA)", "language": "en", "verifiedAt": "2026-10-27T00:00:00Z"},
+      {"url": "https://www.gov.uk/student-visa", "description": "GOV.UK - Student visa", "language": "en", "verifiedAt": "2026-11-05T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "AUS", "iso2": "AU", "name": "Australia", "continent": "OCEANIA", "currency": "AUD",
+    "languages": ["en"], "origin": false, "destination": true,
+    "officialSources": [
+      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/electronic-travel-authority-601", "description": "Home Affairs - Electronic Travel Authority (601)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/evisitor-651", "description": "Home Affairs - eVisitor (651)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600/tourist-stream-overseas", "description": "Home Affairs - Visitor (600), tourist stream (apply outside Australia)", "language": "en", "verifiedAt": "2026-10-28T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "KOR", "iso2": "KR", "name": "South Korea", "continent": "ASIA", "currency": "KRW",
+    "languages": ["ko", "en"], "origin": false, "destination": true,
+    "officialSources": [
+      {"url": "https://www.visa.go.kr/openPage.do?MENU_ID=10102", "description": "Korea Visa Portal - visa waiver (lista só por formulário com sessão; entrada manual)", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "EGY", "iso2": "EG", "name": "Egypt", "continent": "AFRICA", "currency": "EGP",
+    "languages": ["ar", "en"], "origin": false, "destination": true,
+    "officialSources": [
+      {"url": "https://visa2egypt.gov.eg/eVisa/Home", "description": "Egypt e-Visa portal", "language": "en", "verifiedAt": "2026-10-23T00:00:00Z"},
+      {"url": "https://visa2egypt.gov.eg/eVisa/FAQ", "description": "Egypt e-Visa portal - FAQ: eligible nationalities, fees and requirements", "language": "en", "verifiedAt": "2026-10-28T00:00:00Z"}
+    ]
+  },
+  {
+    "iso3": "ARG", "iso2": "AR", "name": "Argentina", "continent": "SOUTH_AMERICA", "currency": "ARS",
+    "languages": ["es"], "origin": false, "destination": true,
+    "officialSources": [
+      {"url": "https://www.migraciones.gob.ar/accesible/indexdnm.php?visas", "description": "Dirección Nacional de Migraciones - Régimen de Visas", "language": "es", "verifiedAt": "2026-10-28T00:00:00Z"}
+    ]
+  }
+]
