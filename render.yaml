@@ -1,0 +1,37 @@
+# Render Blueprint: the production service described as code (Render > New > Blueprint).
+# Secrets are not here: "sync: false" makes Render ask for each value when the Blueprint is created.
+services:
+  - type: web
+    name: api-visa
+    runtime: docker
+    plan: free
+    # Same region as the Atlas cluster (AWS us-east-1), so database calls stay short.
+    region: virginia
+    rootDir: api-visa
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # Deploys come from the Deploy workflow, only after the CI passes on main.
+    autoDeployTrigger: "off"
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: NOTIFICATION_EMAIL_TO
+        sync: false
+      - key: NOTIFICATION_EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      # The collection is started by the Collect workflow; the free instance sleeps when idle.
+      - key: COLLECTION_CRON
+        value: "-"
+      - key: RATE_LIMIT_CAPACITY
+        value: "60"

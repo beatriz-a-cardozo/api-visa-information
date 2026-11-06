@@ -27,6 +27,8 @@ spring:
       enabled: true
 
 server:
+  # Render (and most hosts) tell the app which port to listen on through PORT.
+  port: ${PORT:8080}
   shutdown: graceful
   # Render and other hosts terminate TLS in a proxy; trust its X-Forwarded-* headers.
   forward-headers-strategy: framework

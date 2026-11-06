@@ -249,9 +249,16 @@ AUS) e 3 dependem de entrada manual (BRA, JPN, KOR). Estudo tem scraper para DEU
 
 ## Deploy (gratuito)
 
-- **App**: Render (web service gratuito, a partir do Dockerfile). O plano gratuito
-  hiberna após inatividade, então o agendamento não depende do processo ficar no ar.
-- **Banco**: MongoDB Atlas M0, com usuário de privilégio mínimo e lista de IPs.
+- **App**: Render (web service gratuito, a partir do Dockerfile), descrito em `render.yaml`
+  (Blueprint) na região `virginia`. O plano gratuito hiberna após inatividade, então o
+  agendamento não depende do processo ficar no ar. A porta vem da variável `PORT` do Render.
+- **Pipeline**: o deploy automático do Render fica desligado; o workflow `deploy.yml` roda
+  quando o CI termina verde num push na `main`, chama o deploy hook, acompanha o deploy pela
+  API do Render até ficar `live` e faz um smoke test (health, `/api/v1/countries`, Actuator
+  fechado e `/admin` exigindo a chave). O Render só troca o tráfego depois que
+  `/actuator/health/readiness` responde.
+- **Banco**: MongoDB Atlas M0 (AWS `us-east-1`, perto do Render), com usuário `readWrite` só
+  no banco `api_visa` e lista de IPs com as faixas de saída do Render.
 - **Versão do MongoDB local e no CI**: 7.0 (compose e Testcontainers). O 8.x se recusa a
   iniciar em kernels Linux de 6.19 a 7.0.13 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)),
   e runners do GitHub já usam esse kernel; o Dependabot ignora o `mongo` 8.x por isso. A
